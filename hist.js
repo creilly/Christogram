@@ -1,21 +1,22 @@
-var height = 100, width = 200;
+var height = 250, width = 500;
 
+var pad = .2;
 // scaling functions.  input ranges from 0 to 1.  origin is bottom left.
-function x ( d, pad ) {
-    if (pad) {
-	return width * ( .9 * d + .05 );
+function x ( d, p ) {
+    if (p) {
+	return width * ( ( 1 - pad ) * d + pad / 2 );
     }
     else {
-	return width * .9 * d;
+	return width * ( 1 - pad ) * d;
     }
 };
 
-function y ( d, pad ) {
-    if (pad) {
-	return height * ( .95 - .9 * d );
+function y ( d, p ) {
+    if (p) {
+	return height * ( ( 1 - pad / 2 ) - ( 1 - pad ) * d );
     }
     else {
-	return .9 * height * d;
+	return ( 1 - pad ) * height * d;
     }
 };
 
