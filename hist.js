@@ -28,7 +28,7 @@ function gaussian (n) {
     var data = [];
 
     for (var i = 0; i < n; i++){
-	data[i] = (ran() + ran() + ran()) / 3;
+	data[i] = (ran() + ran() + ran()) * 10 / 3 - 499;
     }
     return data;
 };
@@ -69,19 +69,19 @@ function drawAxes () {
 
     var range = data[data.length - 1] - data[0];
 
-    var pow = Math.round( Math.log(range) / Math.log(10) ) - 1;
+    var pow = Math.ceil( Math.log(range) / Math.log(10) ) - 1;
 
     var tickWidth = Math.pow( 10, pow);
 
-    var n = Math.round( data[0] / tickWidth );
+    var n = Math.ceil( data[0] / tickWidth );
+    console.log( n );
 
-    var tick = x( n * tickWidth / range, true );
+    var tick = x( ( n * tickWidth - data[0] ) / range, true );
 
     var h = y( 0, true ) + 15;
 
     while ( tick < x(1, true) ) {
 	
-	r.circle(tick, h, 10);
 	r.text(tick, h, ( n * tickWidth ).toFixed(1).toString());
 	n++;
 	tick += x(tickWidth/range);
@@ -130,7 +130,7 @@ var bars = null;
 //histogram (on document load)
 var hist = null;
 //test data
-var data = gaussian( 1000 ).sort();
+var data = gaussian( 1000 ).sort(function (a,b) {return a - b});
 
 window.onload = function () {
     
