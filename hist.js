@@ -43,8 +43,8 @@ function binner ( bins, start, end ) {
 // creates a binned array from data and number of bins
 function binData( data, bins ) {
     
-    var start = Math.min.apply(null, data);
-    var end = Math.max.apply(null, data);
+    var start = data[0];
+    var end = data[data.length -1];
 
     var bin = binner( bins, start, end );
     
@@ -59,7 +59,34 @@ function binData( data, bins ) {
     }
 
     return hist;
+
 };
+
+function drawAxes () {
+    r.path ( 'M' + x(0,true).toString() + ',' + y(1,true).toString() + 
+	     'L' + x(0,true).toString() + ',' + y(0,true).toString() + 
+	     'L' + x(1,true).toString() + ',' + y(0,true).toString() );
+
+    var range = data[data.length - 1] - data[0];
+
+    var pow = Math.round( Math.log(range) / Math.log(10) ) - 1;
+
+    var tickWidth = Math.pow( 10, pow);
+
+    var n = Math.round( data[0] / tickWidth );
+
+    var tick = x( n * tickWidth / range, true );
+
+    var h = y( 0, true ) + 15;
+
+    while ( tick < x(1, true) ) {
+	
+	r.circle(tick, h, 10);
+	r.text(tick, h, ( n * tickWidth ).toFixed(1).toString());
+	n++;
+	tick += x(tickWidth/range);
+    }
+}
 
 // queries the slider and draws a histogram
 function drawHist () {
@@ -69,23 +96,25 @@ function drawHist () {
 
     var bins = document.getElementById('bins').valueAsNumber;
 
-    var hist = binData(data,bins);
+    hist = binData(data,bins);
 
     var max = Math.max.apply(null, hist);
 
-    var barWidth = x( 1 / bins ) * .8;
+    var binWidth = x( 1 / bins );
 
     function rect ( bin, height ) {
 
-	var xLoc = x( i / bins, true );
+	var pad = .2
+	var xLoc = x( bin / bins, true ) + pad / 2 * binWidth;
 	var yLoc = y(height, true);
 	
-	return r.rect( xLoc, yLoc, barWidth, y(height) );
+	return r.rect( xLoc, yLoc, binWidth * ( 1 - pad ), y(height) );
     };
     
     for (var i = 0; i < bins; i++) {
 	bars.push(rect( i, hist[i] / max ));
     }
+    drawAxes();
     setColor();
 };    
 
@@ -98,8 +127,10 @@ function setColor () {
 var r = null;
 //to represent bars on document load
 var bars = null;
+//histogram (on document load)
+var hist = null;
 //test data
-var data = gaussian( 10000 );
+var data = gaussian( 1000 ).sort();
 
 window.onload = function () {
     
