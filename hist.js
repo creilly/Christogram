@@ -1,6 +1,60 @@
 var height = 250, width = 500;
-
 var pad = .2;
+
+//to represent svg canvas on document load
+var r = null;
+//to represent bars on document load
+var plots = [];
+//index of active histogram
+var plotSelect = null;
+//color wheel
+var colorWheel = null;
+//bin slider
+var binSlider = null;
+//create new plot object from a data set and name
+function createPlot(data, name){
+	data = data.sort(function (a,b) {return a-b});
+	var plot = new Object();
+	plot.data = data;
+	plot.name = name;
+	plot.svg = null;
+	plot.color = null;
+	plot.bins = null;
+	plot.ticks = null;
+	
+	return plot;
+	
+	plots.push(plot);
+	
+	var option = document.createElement('option');
+	option.text = plot.name;
+	plotSelect.add(option, null);
+	plotSelect.selectedIndex = plotSelect.options.length - 1;
+	
+	binSlider.value = binSlider.defaultValue;
+	colorWheel.value = colorWheel.defaultValue;
+	
+	binsChanged();
+	
+	var min = data[0];
+	var max = data[data.length - 1];
+	var range = max - min;
+	
+	var tickCoords = getTickCoords( min, max );
+	
+	var yBase = y(-.1,true);
+	
+	for (var i = 0; i < tickCoords.length; i++){
+		plot.svg.push( r.text( x( (tickCoords[i] - min)/range, true ), yBase, tickCoords[i].toFixed(1).toString() ) );
+	}
+	
+	
+};
+
+function activePlot() {
+	return plots[plotSelect.selectedIndex];
+}
+
 // scaling functions.  input ranges from 0 to 1.  origin is bottom left.
 function x ( d, p ) {
     if (p) {
@@ -33,6 +87,26 @@ function gaussian (n) {
     return data;
 };
 
+//produce tick mark locations from endpoints and desired density
+function getTickCoords(min, max) {
+	var range = max - min;
+	var tickWidth = pow(10, Math.ceil( Math.log(range) / Math.log(10) ) - 1);
+	
+	var tick = Math.ceil(min/tickWidth) * tickWidth;
+	var ticks = [];
+	while (tick < max){
+		ticks.push(tick);
+		tick += tickWidth;
+	}
+	return ticks;
+}
+
+function drawAxes () {
+    r.path ( 'M' + x(0,true).toString() + ',' + y(1,true).toString() + 
+	     'L' + x(0,true).toString() + ',' + y(0,true).toString() + 
+	     'L' + x(1,true).toString() + ',' + y(0,true).toString() );
+};
+
 // returns a function that will find the bin number for you
 function binner ( bins, start, end ) {
     return function ( x ) {
@@ -62,88 +136,77 @@ function binData( data, bins ) {
 
 };
 
-function drawAxes () {
-    r.path ( 'M' + x(0,true).toString() + ',' + y(1,true).toString() + 
-	     'L' + x(0,true).toString() + ',' + y(0,true).toString() + 
-	     'L' + x(1,true).toString() + ',' + y(0,true).toString() );
-
-    var range = data[data.length - 1] - data[0];
-
-    var pow = Math.ceil( Math.log(range) / Math.log(10) ) - 1;
-
-    var tickWidth = Math.pow( 10, pow);
-
-    var n = Math.ceil( data[0] / tickWidth );
-    console.log( n );
-
-    var tick = x( ( n * tickWidth - data[0] ) / range, true );
-
-    var h = y( 0, true ) + 15;
-
-    while ( tick < x(1, true) ) {
-	
-	r.text(tick, h, ( n * tickWidth ).toFixed(1).toString());
-	n++;
-	tick += x(tickWidth/range);
-    }
-}
-
 // queries the slider and draws a histogram
-function drawHist () {
+function binsChanged () {
+
+	var plot = activePlot();
 
     r.clear();
-    bars.clear();
+	
+    plot.bars.clear();
 
-    var bins = document.getElementById('bins').valueAsNumber;
+	activePlot().bins = binSlider.value;
+	
+    var bins = binSlider.valueAsNumber;
 
-    hist = binData(data,bins);
+    hist = binData(plot.data,bins);
 
     var max = Math.max.apply(null, hist);
 
     var binWidth = x( 1 / bins );
+	
+	var color = activePlot().color;
 
     function rect ( bin, height ) {
 
-	var pad = .2
-	var xLoc = x( bin / bins, true ) + pad / 2 * binWidth;
-	var yLoc = y(height, true);
-	
-	return r.rect( xLoc, yLoc, binWidth * ( 1 - pad ), y(height) );
+		var pad = .2
+		var xLoc = x( bin / bins, true ) + pad / 2 * binWidth;
+		var yLoc = y(height, true);
+		
+		return r.rect( xLoc, yLoc, binWidth * ( 1 - pad ), y(height) ).attr('color',color);
     };
     
     for (var i = 0; i < bins; i++) {
-	bars.push(rect( i, hist[i] / max ));
+		plot.svg.push(rect( i, hist[i] / max ));
     }
-    drawAxes();
-    setColor();
-};    
-
-//queries color slider and sets outline color of bars
-function setColor () {
-    bars.attr('stroke',document.getElementById('color').value);
+	
 };
 
-//to represent svg canvas on document load
-var r = null;
-//to represent bars on document load
-var bars = null;
-//histogram (on document load)
-var hist = null;
-//test data
-var data = gaussian( 1000 ).sort(function (a,b) {return a - b});
+//queries color slider and sets outline color of bars
+function colorChanged () {
+    bars.attr('stroke',colorWheel.value);
+};
+
+function plotChanged() {
+	var plot = activePlot();
+	colorWheel.value = plot.color;
+	binSlider.value = plot.bins;
+};
+
+data.push( createPlot(gaussian( 1000 ).sort(function (a,b) {return a - b})) );
 
 window.onload = function () {
     
     r = Raphael("hist", width, height);
 
     bars = r.set();
+	
+	colorWheel = document.getElementById('color wheel');
+	
+	binSlider = document.getElementById('bin slider');
+	
+	plotSelect = document.getElementById('plot select');
+	
+	drawAxes();
 
-    drawHist();
+    binsChanged();
+	
+	activeHistChanged();
 
-    setColor();
+    binSlider.onchange =  binsChanged;
 
-    document.getElementById('bins').onchange =  drawHist;
-
-    document.getElementById('color').onchange = setColor;
+    colorWheel.onchange = colorChanged;
+	
+	plotSelect.onchange = plotChanged;
 
 }
