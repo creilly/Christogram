@@ -11,49 +11,46 @@ var plotSelect = null;
 var colorWheel = null;
 //bin slider
 var binSlider = null;
+
 //create new plot object from a data set and name
-function createPlot(data, name){
+function newPlot(data, name){
+
 	data = data.sort(function (a,b) {return a-b});
 	var plot = new Object();
+	
+	//base data
 	plot.data = data;
 	plot.name = name;
-	plot.svg = null;
-	plot.color = null;
-	plot.bins = null;
-	plot.ticks = null;
+	
+	//control settings
+	plot.color = Raphael.getColor();
+	plot.bins = binSlider.defaultValue;
+	
+	//histogram
+	plot.hist = null;
+	
+	//svg content
+	plot.bars = r.set();
+	plot.xTicks = r.set();
+	plot.yTicks = r.set();
 	
 	return plot;
-	
+}
+
+//called when creating new plot
+function createPlot(plot){
+
 	plots.push(plot);
 	
-	var option = document.createElement('option');
-	option.text = plot.name;
-	plotSelect.add(option, null);
-	plotSelect.selectedIndex = plotSelect.options.length - 1;
+	plotSelect.selectedIndex = newOption(plot.name);
 	
-	binSlider.value = binSlider.defaultValue;
-	colorWheel.value = colorWheel.defaultValue;
+	plotChanged();
 	
 	binsChanged();
 	
-	var min = data[0];
-	var max = data[data.length - 1];
-	var range = max - min;
-	
-	var tickCoords = getTickCoords( min, max );
-	
-	var yBase = y(-.1,true);
-	
-	for (var i = 0; i < tickCoords.length; i++){
-		plot.svg.push( r.text( x( (tickCoords[i] - min)/range, true ), yBase, tickCoords[i].toFixed(1).toString() ) );
-	}
-	
+	drawXTicks();
 	
 };
-
-function activePlot() {
-	return plots[plotSelect.selectedIndex];
-}
 
 // scaling functions.  input ranges from 0 to 1.  origin is bottom left.
 function x ( d, p ) {
@@ -74,23 +71,72 @@ function y ( d, p ) {
     }
 };
 
-// get an array of n gaussian distributed (approx) random numbers from 0 to 1
-function gaussian (n) {
-    
-    var ran = Math.random;
+function clearSet( set ) {
+	while( set.length ){
+		set.pop().remove();
+	}
+};
 
-    var data = [];
+function drawXTicks() {
+	var plot = activePlot();
+	
+	clearSet( plot.xTicks );
+	
+	var data = plot.data;
+	var min = data[0];
+	var max = data[data.length - 1];
+	var range = max - min;
+	
+	var tickCoords = getTickCoords( min, max );
+	
+	var yLoc = y( (plotSelect.selectedIndex) ? 1.1 : -.1,true); //HACK
+	
+	for (var i = 0; i < tickCoords.length; i++){
+		var xLoc = x( (tickCoords[i] - min ) / range, true );
+		
+		var tickMark = r.text( xLoc, yLoc, tickCoords[i].toFixed(1).toString() );
+		
+		plot.xTicks.push( tickMark );
+	}
+	
+	plot.xTicks.attr('fill', plot.color);
+	
+};
 
-    for (var i = 0; i < n; i++){
-	data[i] = (ran() + ran() + ran()) * 10 / 3 - 499;
-    }
-    return data;
+function drawYTicks() {
+	
+	var plot = activePlot();
+	
+	clearSet( plot.yTicks );
+	
+	var hist = plot.hist;
+	var min = 0;
+	var max = Math.max.apply(Math, hist);
+	console.log(max);
+	var range = max - min;
+	
+	var tickCoords = getTickCoords( min, max );
+	
+	console.log(tickCoords);
+	
+	var xLoc = x((plotSelect.selectedIndex) ? -.1 : 1.1,true); //HACK
+	
+	for (var i = 0; i < tickCoords.length; i++){
+		var yLoc = y( (tickCoords[i] - min ) / range, true );
+		
+		var tickMark = r.text( xLoc, yLoc, tickCoords[i].toString() );
+		
+		plot.yTicks.push( tickMark );
+	}
+	
+	plot.yTicks.attr('fill', plot.color);
+	
 };
 
 //produce tick mark locations from endpoints and desired density
 function getTickCoords(min, max) {
 	var range = max - min;
-	var tickWidth = pow(10, Math.ceil( Math.log(range) / Math.log(10) ) - 1);
+	var tickWidth = Math.pow(10, Math.ceil( Math.log(range) / Math.log(10) ) - 1);
 	
 	var tick = Math.ceil(min/tickWidth) * tickWidth;
 	var ticks = [];
@@ -99,7 +145,25 @@ function getTickCoords(min, max) {
 		tick += tickWidth;
 	}
 	return ticks;
-}
+};
+
+function activePlot() {
+	return plots[plotSelect.selectedIndex];
+};
+
+// get an array of n gaussian distributed (approx) random numbers from 0 to 1
+function gaussian (n, mean, spread) {
+    
+    var ran = Math.random;
+
+    var data = [];
+
+    for (var i = 0; i < n; i++){
+		data[i] = ( (ran() + ran() + ran()) / 3 - .5 ) * spread + mean;
+    }
+	
+    return data;
+};
 
 function drawAxes () {
     r.path ( 'M' + x(0,true).toString() + ',' + y(1,true).toString() + 
@@ -136,45 +200,64 @@ function binData( data, bins ) {
 
 };
 
+//add select option, returns option's index
+function newOption (name) {
+	var option = document.createElement('option');
+	option.text = name;
+	plotSelect.add(option, null);
+	return plotSelect.options.length - 1;
+}
+
 // queries the slider and draws a histogram
 function binsChanged () {
 
 	var plot = activePlot();
-
-    r.clear();
 	
-    plot.bars.clear();
+	clearSet(plot.bars);
 
-	activePlot().bins = binSlider.value;
+	plot.bins = binSlider.value;
 	
     var bins = binSlider.valueAsNumber;
 
-    hist = binData(plot.data,bins);
+    hist = binData( plot.data, bins );
+	
+	plot.hist = hist;
 
     var max = Math.max.apply(null, hist);
 
-    var binWidth = x( 1 / bins );
-	
-	var color = activePlot().color;
-
-    function rect ( bin, height ) {
-
-		var pad = .2
-		var xLoc = x( bin / bins, true ) + pad / 2 * binWidth;
-		var yLoc = y(height, true);
-		
-		return r.rect( xLoc, yLoc, binWidth * ( 1 - pad ), y(height) ).attr('color',color);
-    };
+    var binWidth = x( 1 / bins, false );
     
+	var barPad = .2;
+	
+	var barWidth = binWidth * ( 1 - barPad );
+	var barOffset = (binWidth - barWidth) / 2;
+	
     for (var i = 0; i < bins; i++) {
-		plot.svg.push(rect( i, hist[i] / max ));
+	
+		var height = hist[i] / max;
+		var yLoc = y(height, true);
+		var barHeight = y(height, false);
+		
+		var xLoc = x( i / bins, true ) + barOffset;
+		
+		var rect = r.rect( xLoc, yLoc, barWidth, barHeight )	
+		plot.bars.push(rect);
     }
+	
+	plot.bars.attr('stroke',colorWheel.value);
+	
+	drawYTicks();
 	
 };
 
 //queries color slider and sets outline color of bars
 function colorChanged () {
-    bars.attr('stroke',colorWheel.value);
+	var plot = activePlot();
+	var color = colorWheel.value;
+	plot.color = colorWheel.value;
+    plot.bars.attr('stroke',color);
+	plot.xTicks.attr('fill',color);
+	plot.yTicks.attr('fill',color);
 };
 
 function plotChanged() {
@@ -183,13 +266,9 @@ function plotChanged() {
 	binSlider.value = plot.bins;
 };
 
-data.push( createPlot(gaussian( 1000 ).sort(function (a,b) {return a - b})) );
-
 window.onload = function () {
     
     r = Raphael("hist", width, height);
-
-    bars = r.set();
 	
 	colorWheel = document.getElementById('color wheel');
 	
@@ -199,14 +278,14 @@ window.onload = function () {
 	
 	drawAxes();
 
-    binsChanged();
-	
-	activeHistChanged();
-
     binSlider.onchange =  binsChanged;
 
     colorWheel.onchange = colorChanged;
 	
 	plotSelect.onchange = plotChanged;
+	
+	createPlot( newPlot( gaussian(10000,-100,5 ) , 'test' ) );
+	
+	createPlot( newPlot( gaussian(1000,0,3), 'zero' ) );
 
 }
