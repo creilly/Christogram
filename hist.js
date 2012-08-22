@@ -1,16 +1,22 @@
 var height = 250, width = 500;
 var pad = .2;
+var barPad = .2;
+var tickPad = .05;
+var halfTickWidth = .005;
 
 //to represent svg canvas on document load
 var r = null;
 //to represent bars on document load
 var plots = [];
 //index of active histogram
+
+//controls
 var plotSelect = null;
-//color wheel
 var colorWheel = null;
-//bin slider
 var binSlider = null;
+var tickDecrease = null;
+var tickIncrease = null;
+var hAxisRadio = null;
 
 //create new plot object from a data set and name
 function newPlot(data, name){
@@ -31,11 +37,36 @@ function newPlot(data, name){
 	
 	//svg content
 	plot.bars = r.set();
-	plot.xTicks = r.set();
-	plot.yTicks = r.set();
+	
+	//axes
+	var axes = [];
+	//horizontal
+	axes[0] = null;
+	//vertical
+	axes[1] = null;
+	plot.axes = axes;
 	
 	return plot;
-}
+};
+
+function createAxis (min, max) {
+	var axis = new Object();
+	axis.min = min;
+	axis.max = max;
+	var range = max - min;
+	var pow = Math.ceil(Math.log(range)/Math.log(10));
+	var half = false;
+	while ( ( ( range / Math.pow(10,pow) ) * ( half ? 2 : 1 ) ) < 4 ) {
+		pow -= (half ? 1 : 0);
+		half = !half;
+	}
+	axis.pow = pow;
+	axis.half = half;
+	axis.den = 0;
+	
+	axis.ticks = r.set();
+	return axis;
+};
 
 //called when creating new plot
 function createPlot(plot){
@@ -48,7 +79,7 @@ function createPlot(plot){
 	
 	binsChanged();
 	
-	drawXTicks();
+	drawTicks(horizontal = true);
 	
 };
 
@@ -77,59 +108,76 @@ function clearSet( set ) {
 	}
 };
 
-function drawXTicks() {
-	var plot = activePlot();
-	
-	clearSet( plot.xTicks );
-	
-	var data = plot.data;
-	var min = data[0];
-	var max = data[data.length - 1];
-	var range = max - min;
-	
-	var tickCoords = getTickCoords( min, max );
-	
-	var yLoc = y( (plotSelect.selectedIndex) ? 1.1 : -.1,true); //HACK
-	
-	for (var i = 0; i < tickCoords.length; i++){
-		var xLoc = x( (tickCoords[i] - min ) / range, true );
-		
-		var tickMark = r.text( xLoc, yLoc, tickCoords[i].toFixed(1).toString() );
-		
-		plot.xTicks.push( tickMark );
-	}
-	
-	plot.xTicks.attr('fill', plot.color);
-	
-};
+function drawTicks(horizontal) {
 
-function drawYTicks() {
-	
+	// b stands for boolean
+	var b = horizontal
+
 	var plot = activePlot();
+
+	var axis = plot.axes[ b ? 0 : 1 ]
 	
-	clearSet( plot.yTicks );
-	
-	var hist = plot.hist;
-	var min = 0;
-	var max = Math.max.apply(Math, hist);
-	console.log(max);
-	var range = max - min;
-	
-	var tickCoords = getTickCoords( min, max );
-	
-	console.log(tickCoords);
-	
-	var xLoc = x((plotSelect.selectedIndex) ? -.1 : 1.1,true); //HACK
-	
-	for (var i = 0; i < tickCoords.length; i++){
-		var yLoc = y( (tickCoords[i] - min ) / range, true );
-		
-		var tickMark = r.text( xLoc, yLoc, tickCoords[i].toString() );
-		
-		plot.yTicks.push( tickMark );
+	if (axis == null) {
+		if (b) {
+			plot.axes[0] = axis = createAxis(plot.data[0], plot.data[plot.data.length-1])
+		}
+		else {
+			plot.axes[1] = axis = createAxis(Math.min.apply(Math, plot.hist), Math.max.apply(Math, plot.hist));
+		}
+	}
+	else {
+		clearSet( axis.ticks );
 	}
 	
-	plot.yTicks.attr('fill', plot.color);
+	var min = axis.min;
+	var max = axis.max;
+	var range = max - min;
+	
+	var decPlaces = axis.den - axis.pow;
+	var tickWidth = Math.pow(10, -1 * decPlaces);
+	
+	var nTicks = range/tickWidth
+	var drawHalfTick = axis.half || ( nTicks > 5 );
+	
+	if (nTicks > 10) {
+		tickWidth *= 2;
+	}
+	
+	var tick = Math.ceil(min/tickWidth) * tickWidth;
+	
+	var base = (b ? y : x)( (plotSelect.selectedIndex) ? - tickPad : (1 + tickPad), true); //HACK
+	
+	var toggle = false;
+	
+	if (axis.half) {
+		tickWidth *= .5;
+		if ( (tick - tickWidth) > min ){
+			toggle = true;
+		}
+	}
+	
+	while (tick < max){
+		if (!b && !plotSelect.selectedIndex) {
+			var pos = y( 1 - (tick - min) / range, true );
+		}
+		else{
+			var pos = (b ? x : y)( (tick - min) / range, true );
+		}
+		
+		if (toggle && drawHalfTick) {
+			// draw half tick
+			var tickMark = r.circle( b ? pos : base, b ? base : pos, x(halfTickWidth,false) ).attr('stroke-width',0);
+		}
+		else {
+			var text = ( Math.round(tick * Math.pow(10, decPlaces)) / Math.pow(10,decPlaces)).toFixed( (decPlaces > 0) ? decPlaces : 0 ).toString();
+			var tickMark = r.text( b ? pos : base, b ? base : pos, text );
+		}
+		axis.ticks.push( tickMark );
+		tick += tickWidth;
+		toggle = !toggle;
+	}
+	
+	axis.ticks.attr( 'fill', plot.color);	
 	
 };
 
@@ -226,8 +274,6 @@ function binsChanged () {
     var max = Math.max.apply(null, hist);
 
     var binWidth = x( 1 / bins, false );
-    
-	var barPad = .2;
 	
 	var barWidth = binWidth * ( 1 - barPad );
 	var barOffset = (binWidth - barWidth) / 2;
@@ -235,7 +281,7 @@ function binsChanged () {
     for (var i = 0; i < bins; i++) {
 	
 		var height = hist[i] / max;
-		var yLoc = y(height, true);
+		var yLoc = y((plotSelect.selectedIndex) ? height : 1,true);
 		var barHeight = y(height, false);
 		
 		var xLoc = x( i / bins, true ) + barOffset;
@@ -244,9 +290,15 @@ function binsChanged () {
 		plot.bars.push(rect);
     }
 	
-	plot.bars.attr('stroke',colorWheel.value);
+	plot.bars.attr('fill',colorWheel.value);
+	plot.bars.attr('fill-opacity', .5);
+	plot.bars.attr('stroke-width',0);
 	
-	drawYTicks();
+	if ( plot.axes[1] != null ){
+		clearSet(plot.axes[1].ticks);
+		plot.axes[1] = null;
+	}
+	drawTicks(horizontal = false);
 	
 };
 
@@ -255,9 +307,9 @@ function colorChanged () {
 	var plot = activePlot();
 	var color = colorWheel.value;
 	plot.color = colorWheel.value;
-    plot.bars.attr('stroke',color);
-	plot.xTicks.attr('fill',color);
-	plot.yTicks.attr('fill',color);
+    plot.bars.attr('fill',color);
+	plot.axes[0].ticks.attr('fill',color);
+	plot.axes[1].ticks.attr('fill',color);
 };
 
 function plotChanged() {
@@ -265,6 +317,22 @@ function plotChanged() {
 	colorWheel.value = plot.color;
 	binSlider.value = plot.bins;
 };
+
+function densityChanged(horizontal, increase) {
+	axis = activePlot().axes[horizontal ? 0 : 1];
+	if (increase) {
+		if (axis.half) {
+			axis.pow -= 1;
+		}
+	}
+	else {
+		if (!axis.half) {
+			axis.pow += 1;
+		}
+	}
+	axis.half = !axis.half;
+	drawTicks(horizontal = horizontal);
+}
 
 window.onload = function () {
     
@@ -276,7 +344,13 @@ window.onload = function () {
 	
 	plotSelect = document.getElementById('plot select');
 	
-	drawAxes();
+	tickDecrease = document.getElementById('less ticks');
+	
+	tickIncrease = document.getElementById('more ticks');
+	
+	hAxisRadio = document.getElementById('horizontal axis radio');
+	
+	//drawAxes();
 
     binSlider.onchange =  binsChanged;
 
@@ -284,8 +358,12 @@ window.onload = function () {
 	
 	plotSelect.onchange = plotChanged;
 	
+	tickDecrease.onclick = function () {densityChanged(horizontal = hAxisRadio.checked, increase = false);}
+	
+	tickIncrease.onclick = function () {densityChanged(horizontal = hAxisRadio.checked, increase = true);}
+	
 	createPlot( newPlot( gaussian(10000,-100,5 ) , 'test' ) );
 	
-	createPlot( newPlot( gaussian(1000,0,3), 'zero' ) );
+	createPlot( newPlot( gaussian(2000,0,2), 'zero' ) );
 
 }
