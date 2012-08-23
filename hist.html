@@ -3,18 +3,37 @@
     <title>Christogram</title>
     <script src="raphael.js"></script>
     <script src="hist.js"></script>
+    <style type="text/css">
+      #dropzone
+      {
+      border:2px dashed #bbb;
+      -moz-border-radius:5px;
+      -webkit-border-radius:5px;
+      border-radius:5px;
+      padding:25px;
+      text-align:center;
+      font:20pt bold,"Vollkorn";
+      color:#bbb;
+      }
+    </style>
   </head>
   <body>
     <h1>Christogram</h1>
     <div id="hist">
     </div>
-    <input id="bin slider" type="range" min="0" max="40" value="50" step="1"/>
-    <input id="color wheel" type="color" value="#0198E1" />
-	<select id="plot select">
-	</select>
-	<button id="less ticks">Less Ticks</button>
-	<button id="more ticks">More Ticks</button>
-	<input id="horizontal axis radio" type="radio" name="axis toggle">Horizontal</input>
-	<input id="vertical axis radio" type="radio" name="axis toggle">Vertical</input>
+    <div id="controls">
+      <input id="bin slider" type="range" min="0" max="80" step="1"/>
+      <input id="color wheel" type="color" value="#0198E1" />
+      <select id="plot select">
+      </select>
+      <button id="less ticks">Less Ticks</button>
+      <button id="more ticks">More Ticks</button>
+      <input id="horizontal axis radio" type="radio" name="axis toggle">Horizontal</input>
+      <input id="vertical axis radio" type="radio" name="axis toggle">Vertical</input>
+    </div>
+    <div id="dropzone">Drop Files Here</div>
+    <div id="sample">
+      <a href="sample_data.txt"><b>Sample data</b></a>
+    </div>
   </body>
 </html>
