@@ -18,6 +18,7 @@ var tickDecrease = null;
 var tickIncrease = null;
 var hAxisRadio = null;
 var dropZone = null;
+var plotRemove = null;
 
 //create new plot object from a data set and name
 function newPlot(data, name){
@@ -82,6 +83,15 @@ function createPlot(plot){
     
     drawTicks(horizontal = true);
     
+};
+
+function removePlot() {
+    plot = activePlot();
+    clearSet(plot.bars);
+    clearSet(plot.axes[0]);
+    clearSet(plot.axes[1]);
+    
+    plotSelect.remove(plotSelect.selectedIndex);
 };
 
 // scaling functions.  input ranges from 0 to 1.  origin is bottom left.
@@ -414,6 +424,8 @@ window.onload = function () {
     
     dropZone = document.getElementById('dropzone');
     
+    plotRemove = document.getElementById('remove plot');
+    
     //drawAxes();
 
     binSlider.onchange =  binsChanged;
@@ -425,6 +437,8 @@ window.onload = function () {
     tickDecrease.onclick = function () {densityChanged(horizontal = hAxisRadio.checked, increase = false);}
     
     tickIncrease.onclick = function () {densityChanged(horizontal = hAxisRadio.checked, increase = true);}
+
+    plotRemove.onclick = removePlot;
 
     dropZone.ondragover = handleDragOver;
 
