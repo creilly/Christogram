@@ -1,46 +1,62 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <title>Christogram</title>
-    <script src="raphael.js"></script>
-    <script src="hist.js"></script>
-    <style type="text/css">
-      #dropzone
-      {
-      border:2px dashed #bbb;
-      -moz-border-radius:5px;
-      -webkit-border-radius:5px;
-      border-radius:5px;
-      padding:25px;
-      text-align:center;
-      font:20pt bold,"Vollkorn";
-      color:#bbb;
-      }
-    </style>
+    <script src="js/libs/jquery.min.js"></script>
+    <script src="js/libs/raphael.js"></script>
+    <script src="js/hist.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <h1>Christogram</h1>
-    <div id="hist">
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="#">Christogram</a>
+        </div>
+      </div>
     </div>
-    <div id="controls">
-      <input id="bin slider" type="range" min="0" max="80" step="1"/>
-      <input id="color wheel" type="color" value="#0198E1" />
-      <select id="plot select">
-      </select>
-      <button id="less ticks">
-	Less Ticks
-      </button>
-      <button id="more ticks">
-	More Ticks
-      </button>
-      <input id="horizontal axis radio" type="radio" name="axis toggle">Horizontal</input>
-      <input id="vertical axis radio" type="radio" name="axis toggle">Vertical</input>
-      <button id="remove plot">
-	Remove Plot
-      </button>
+    <div class="container-fluid">
+  <div class="row-fluid">
+    <div class="span2">
+      <div id="controls">
+      <form>
+        <legend>Controls</legend>
+        <label>Number of bins</label>
+        <input id="bin-slider" type="range" min="0" max="80" step="1"/>
+        <label>Smoothness</label>
+        <input id="smoother-slider" type="range" min="0" max="1" step=".1"/>
+        <label>Color</label>
+        <input id="color-wheel" type="color" value="#0198E1" width="20px"/>
+        <label>Select plot</label>
+        <select id="plot-select"></select>
+        <label>Ticks</label>
+        <div class="btn-group">
+          <button class="btn" id="less-ticks">Less Ticks</button>
+          <button class="btn" id="more-ticks">More Ticks</button>
+        </div>
+         <label class="radio inline">
+          <input id="horizontal-axis-radio" type="radio" name="axis-toggle">Horizontal</input>
+        </label>
+        <label class="radio inline">
+          <input id="vertical-axis-radio" type="radio" name="axis-toggle">Vertical</input>
+        </label>
+        <br />
+        <button class="btn btn-danger" id="remove-plot">
+         Remove Plot
+       </button>
+      </form>
+   </div>
     </div>
-    <div id="dropzone">Drop Files Here</div>
-    <div id="sample">
-      <a href="sample_data.txt"><b>Sample data</b></a>
+    <div class="span10">
+      <div id="hist">
+      </div>
+      <div id="dropzone">Drop Files Here</div>
+      <div id="sample">
+        <a href="sample_data.txt"><b>Sample data</b></a>
+      </div>
     </div>
-  </body>
+  </div>
+</div>
+</body>
 </html>

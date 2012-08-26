@@ -33,6 +33,8 @@ function newPlot(data, name){
     //control settings
     plot.color = Raphael.getColor();
     plot.bins = binSlider.defaultValue;
+
+    plot.smoothValue = 1;
     
     //histogram
     plot.hist = null;
@@ -247,7 +249,7 @@ function binData( data, bins ) {
     
     var hist = [];
     
-    for (var i = 0; i < 100; i++){
+    for (var i = 0; i <= bins; i++){
 	hist[i] = 0;
     }
 
@@ -269,17 +271,58 @@ function newOption (name) {
 
 // queries the slider and draws a histogram
 function binsChanged () {
-
     var plot = activePlot();
-    
-    clearSet(plot.bars);
-
-    plot.bins = binSlider.value;
-    
     var bins = binSlider.valueAsNumber;
 
-    hist = binData( plot.data, bins );
-    
+    var hist = binData( plot.data, bins );
+    plot.rawHist = hist;
+
+    changeHistogramValues(plot, hist);
+    updateSmoothSlider(plot);
+
+};
+
+function dataAvailable(plot) {
+    return plot.rawHist != null;
+}
+
+function setupSmoother() {
+    smootherSlider.step = 1;
+    smootherSlider.min = 1;
+    smootherSlider.value = smootherSlider.min;
+    smootherSlider.onchange = function (event) {
+        var plot = activePlot();
+        var raw = plot.rawHist;
+        var m = parseInt(smootherSlider.valueAsNumber);
+        plot.smoothValue = m;
+        var smoothed = movingAverage(raw, m);
+        changeHistogramValues(plot,smoothed);
+    };
+
+}
+
+function movingAverage(raw, m) {
+    var smoothed = [];
+    var n = raw.length;
+    var i;
+    for (i = 0; i< n - m; i ++) {
+        var nextSmooth = 0.0;
+        var j;
+        for (j = 0; j < m; j++) {
+            nextSmooth+=raw[i+j];
+        }
+        smoothed.push(nextSmooth);
+    }
+    return smoothed;
+}
+
+function changeHistogramValues(plot, hist) {
+    var bins = hist.length;
+
+    clearSet(plot.bars);
+
+    plot.bins = bins;
+
     plot.hist = hist;
 
     var max = Math.max.apply(null, hist);
@@ -290,15 +333,15 @@ function binsChanged () {
     var barOffset = (binWidth - barWidth) / 2;
     
     for (var i = 0; i < bins; i++) {
-	
-	var height = hist[i] / max;
-	var yLoc = y((plotSelect.selectedIndex) ? height : 1,true);
-	var barHeight = y(height, false);
-	
-	var xLoc = x( i / bins, true ) + barOffset;
-	
-	var rect = r.rect( xLoc, yLoc, barWidth, barHeight )	
-	plot.bars.push(rect);
+    
+    var height = hist[i] / max;
+    var yLoc = y((plotSelect.selectedIndex) ? height : 1,true);
+    var barHeight = y(height, false);
+    
+    var xLoc = x( i / bins, true ) + barOffset;
+    
+    var rect = r.rect( xLoc, yLoc, barWidth, barHeight )    
+    plot.bars.push(rect);
     }
     
     plot.bars.attr('fill',colorWheel.value);
@@ -306,12 +349,11 @@ function binsChanged () {
     plot.bars.attr('stroke-width',0);
     
     if ( plot.axes[1] != null ){
-	clearSet(plot.axes[1].ticks);
-	plot.axes[1] = null;
+    clearSet(plot.axes[1].ticks);
+    plot.axes[1] = null;
     }
     drawTicks(horizontal = false);
-    
-};
+}
 
 //queries color slider and sets outline color of bars
 function colorChanged () {
@@ -327,7 +369,14 @@ function plotChanged() {
     var plot = activePlot();
     colorWheel.value = plot.color;
     binSlider.value = plot.bins;
+    updateSmoothSlider(plot);
 };
+
+function updateSmoothSlider(plot) {
+    if (!dataAvailable(plot)) return;
+    smootherSlider.max = plot.rawHist.length - 2;
+    smootherSlider.value = plot.smoothValue;
+}
 
 function densityChanged(horizontal, increase) {
     axis = activePlot().axes[horizontal ? 0 : 1];
@@ -406,25 +455,29 @@ function handleDragOver(event) {
     return false;
 };
 
-window.onload = function () {
+$(function() {
     
     r = Raphael("hist", width, height);
     
-    colorWheel = document.getElementById('color wheel');
+    colorWheel = document.getElementById('color-wheel');
     
-    binSlider = document.getElementById('bin slider');
+    binSlider = document.getElementById('bin-slider');
     
-    plotSelect = document.getElementById('plot select');
+    plotSelect = document.getElementById('plot-select');
     
-    tickDecrease = document.getElementById('less ticks');
+    tickDecrease = document.getElementById('less-ticks');
     
-    tickIncrease = document.getElementById('more ticks');
+    tickIncrease = document.getElementById('more-ticks');
     
-    hAxisRadio = document.getElementById('horizontal axis radio');
+    hAxisRadio = document.getElementById('horizontal-axis-radio');
     
     dropZone = document.getElementById('dropzone');
     
-    plotRemove = document.getElementById('remove plot');
+    plotRemove = document.getElementById('remove-plot');
+
+    smootherSlider = $("#smoother-slider")[0];
+
+    setupSmoother();
     
     //drawAxes();
 
@@ -449,3 +502,4 @@ window.onload = function () {
     createPlot( newPlot( gaussian(10000,-100,5 ) , 'test' ) );    
 
 }
+);
