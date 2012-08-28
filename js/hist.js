@@ -35,6 +35,7 @@ function newPlot(data, name){
     plot.bins = binSlider.defaultValue;
 
     plot.smoothValue = 1;
+    plot.visible = true;
     
     //histogram
     plot.hist = null;
@@ -277,7 +278,8 @@ function binsChanged () {
     var hist = binData( plot.data, bins );
     plot.rawHist = hist;
 
-    changeHistogramValues(plot, hist);
+    // changeHistogramValues(plot, hist);
+    drawSmoothed();
     updateSmoothSlider(plot);
 
 };
@@ -286,18 +288,20 @@ function dataAvailable(plot) {
     return plot.rawHist != null;
 }
 
-function setupSmoother() {
-    smootherSlider.step = 1;
-    smootherSlider.min = 1;
-    smootherSlider.value = smootherSlider.min;
-    smootherSlider.onchange = function (event) {
+function drawSmoothed() {
         var plot = activePlot();
         var raw = plot.rawHist;
         var m = parseInt(smootherSlider.valueAsNumber);
         plot.smoothValue = m;
         var smoothed = movingAverage(raw, m);
         changeHistogramValues(plot,smoothed);
-    };
+};
+
+function setupSmoother() {
+    smootherSlider.step = 1;
+    smootherSlider.min = 1;
+    smootherSlider.value = smootherSlider.min;
+    smootherSlider.onchange = drawSmoothed;
 
 }
 
@@ -311,7 +315,7 @@ function movingAverage(raw, m) {
         for (j = 0; j < m; j++) {
             nextSmooth+=raw[i+j];
         }
-        smoothed.push(nextSmooth);
+        smoothed.push(nextSmooth / m);
     }
     return smoothed;
 }
@@ -370,7 +374,18 @@ function plotChanged() {
     colorWheel.value = plot.color;
     binSlider.value = plot.bins;
     updateSmoothSlider(plot);
+    updateVisibleToggle(plot);
 };
+
+function updateVisibleToggle(plot) {
+    if (plot.visible) {
+        visRadio.checked = true;
+        invisRadio.checked = false;
+        return;
+    }
+    invisRadio.checked = true;
+    visRadio.checked = false;
+}
 
 function updateSmoothSlider(plot) {
     if (!dataAvailable(plot)) return;
@@ -455,6 +470,25 @@ function handleDragOver(event) {
     return false;
 };
 
+function handleVisibleRadio(event) {
+    console.log(event);
+    var plot = activePlot();
+    if (visRadio.checked) {
+        unhidePlot(plot);
+        return;
+    }
+    hidePlot(plot);
+}
+
+function unhidePlot(plot) {
+    plot.visible = true;
+    binsChanged();
+}
+function hidePlot(plot) {
+    plot.visible = false;
+    clearSet(plot.bars);
+}
+
 $(function() {
     
     r = Raphael("hist", width, height);
@@ -470,6 +504,10 @@ $(function() {
     tickIncrease = document.getElementById('more-ticks');
     
     hAxisRadio = document.getElementById('horizontal-axis-radio');
+    visRadio = document.getElementById('visible-radio');
+    invisRadio = document.getElementById('invisible-radio');
+
+
     
     dropZone = document.getElementById('dropzone');
     
@@ -499,7 +537,7 @@ $(function() {
 
     dropZone.style.width = width;
 
-    createPlot( newPlot( gaussian(10000,-100,5 ) , 'test' ) );    
+    createPlot( newPlot( gaussian(100000,-100,5 ) , 'test' ) );    
 
 }
 );

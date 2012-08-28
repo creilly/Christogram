@@ -41,6 +41,13 @@
           <input id="vertical-axis-radio" type="radio" name="axis-toggle">Vertical</input>
         </label>
         <br />
+         <label class="radio inline">
+          <input id="visible-radio" type="radio" name="visible-toggle" onclick="handleVisibleRadio(this);">Show</input>
+        </label>
+        <label class="radio inline">
+          <input id="invisible-radio" type="radio" name="visible-toggle" onclick="handleVisibleRadio(this);">Hide</input>
+        </label>
+        <br />
         <button action="" class="btn btn-danger" id="remove-plot">
          Remove Plot
        </button>
