@@ -4,98 +4,165 @@ var barPad = .2;
 var tickPad = .05;
 var halfTickWidth = .005;
 
-//to represent svg canvas on document load
-var r = null;
+//to represent canvas on document load
+var canvas = null;
+
+//drawing context
+var c = null;
+
 //to represent bars on document load
-var plots = [];
-//index of active histogram
-
-//controls
-var plotSelect = null;
-var colorWheel = null;
-var binSlider = null;
-var tickDecrease = null;
-var tickIncrease = null;
-var hAxisRadio = null;
-var dropZone = null;
-var plotRemove = null;
-
-//create new plot object from a data set and name
-function newPlot(data, name){
-
-    data = data.sort(function (a,b) {return a-b});
-    var plot = new Object();
-    
-    //base data
-    plot.data = data;
-    plot.name = name;
-    
-    //control settings
-    plot.color = Raphael.getColor();
-    plot.bins = binSlider.defaultValue;
-
-    plot.smoothValue = 1;
-    plot.visible = true;
-    
-    //histogram
-    plot.hist = null;
-    
-    //svg content
-    plot.bars = r.set();
-    
-    //axes
-    var axes = [];
-    //horizontal
-    axes[0] = null;
-    //vertical
-    axes[1] = null;
-    plot.axes = axes;
-    
-    return plot;
-};
-
-function createAxis (min, max) {
-    var axis = new Object();
-    axis.min = min;
-    axis.max = max;
-    var range = max - min;
-    var pow = Math.ceil(Math.log(range)/Math.log(10));
-    var half = false;
-    while ( ( ( range / Math.pow(10,pow) ) * ( half ? 2 : 1 ) ) < 4 ) {
-	pow -= (half ? 1 : 0);
-	half = !half;
-    }
-    axis.pow = pow;
-    axis.half = half;
-    axis.den = 0;
-    
-    axis.ticks = r.set();
-    return axis;
-};
+var plots = null;
 
 //called when creating new plot
-function createPlot(plot){
+var plotCounter = 1;
 
-    plots.push(plot);
+function createPlot(data){
+
+    var plotName = 'plot' + plotCounter.toString();
     
-    plotSelect.selectedIndex = newOption(plot.name);
+    var plot = $('<div></div>')
+	.addClass('accordion-group')
+	.addClass('alert')
+	.addClass('fade')
+	.addClass('in')
+	.prop('id',plotCounter)
+	.data('data',data);
+
+    var close = $('<a><i class="icon-remove" /></a>')
+	.addClass('close')
+	.attr('data-dismiss','alert');
+
+    plot.append(close);
+
+    var heading = $('<div></div>')
+	.addClass('accordion-heading')
+	.addClass('container-fluid');
+
+    var headingrow = $('<div></div>')
+	.addClass('row-fluid');
     
-    plotChanged();
+    var active = $('<input />')
+	.addClass('span3')
+	.prop('type','checkbox')
+	.prop('checked','true')
+
+    headingrow.append(active);
     
-    binsChanged();
+    var toggle = $('<a></a>')
+	.addClass('accordion-toggle')
+	.addClass('span9')
+	.attr('href','#' + plotName)
+	.attr('data-parent','#' + plots.attr('id'))
+	.attr('data-toggle','collapse')			
+	.html(plotName);
+
+    headingrow.append( toggle );
+
+    heading.append(headingrow);
+
+    plot.append(heading);
+
+    var body = $('<div></div>')
+	.addClass('accordion-body')
+	.addClass('collapse')
+	.attr('id',plotName);
+
+    var properties = $('<form></form>')
+	.addClass('accordion-inner');
+
+    properties.append( $('<label>' + 'Plot Name' + '</label>') );
+			           
+    var title = $('<input />')
+	.prop('type','text')
+	.prop('id','title')
+	.prop('value',plotName);
     
-    drawTicks(horizontal = true);
+    properties.append(title);
+
+    properties.append( $('<label>' + 'bin number' + '</label>' ) );
+
+    var binnumber = $('<input />')
+	.prop('type','number')
+	.prop('step',1)
+	.prop('value',50);
     
+    properties.append(binnumber);
+
+    properties.append( $('<label>' + 'color' + '</label>') );
+
+    var color = $('<input />')
+	.prop('id','color-edit')
+	.prop('type','color');
+
+    properties.append( color );
+
+    body.append( properties );
+    
+    plot.append( body );
+
+    //handle logic
+
+    plot.bind('close', function () { console.log( plotName + ' was closed' ) } );
+
+    active.change( function () {console.log(plotName + (this.checked ? ' is active' : ' is inactive' ))} );
+
+    active.trigger('change');
+
+    title.keyup( function (e) {
+	    if (e.keyCode == 13) {
+		$('.accordion-toggle',plot).html(this.value);
+	    }
+	}
+	); 
+
+    color.change( function () {
+	    $('.accordion-toggle',plot).css('color',this.value);
+	}
+	);
+
+    var initColor = '#';
+
+    var rgb = hslToRgb( ( ( 23 + 3 * plotCounter ) / 13 ) % 1 , .5, .5 );
+
+    for (var i in rgb) {
+	initColor += Math.round(rgb[i]).toString(16);
+    }
+
+    color.prop('value',initColor);
+
+    color.trigger('change');
+
+    plots.append(plot);
+
+    toggle.trigger('click.collapse.data-api');
+
+    plotCounter++;
 };
 
-function removePlot() {
-    plot = activePlot();
-    clearSet(plot.bars);
-    clearSet(plot.axes[0]);
-    clearSet(plot.axes[1]);
-    
-    plotSelect.remove(plotSelect.selectedIndex);
-};
+function hslToRgb(h, s, l){
+    var r, g, b;
+
+    if(s == 0){
+        r = g = b = l; // achromatic
+    }else{
+        function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    return [r * 255, g * 255, b * 255];
+}
 
 // scaling functions.  input ranges from 0 to 1.  origin is bottom left.
 function x ( d, p ) {
@@ -116,84 +183,13 @@ function y ( d, p ) {
     }
 };
 
-function clearSet( set ) {
-    while( set.length ){
-	set.pop().remove();
-    }
+function drawBBox() {
+    var thickness = 5;
+    c.lineWidth = 2 * thickness;
+    c.rect(thickness,thickness, width - 2 * thickness, height - 2 * thickness);
+    c.stroke();
 };
 
-function drawTicks(horizontal) {
-
-    // b stands for boolean
-    var b = horizontal
-
-    var plot = activePlot();
-
-    var axis = plot.axes[ b ? 0 : 1 ]
-    
-    if (axis == null) {
-	if (b) {
-	    plot.axes[0] = axis = createAxis(plot.data[0], plot.data[plot.data.length-1])
-	}
-	else {
-	    plot.axes[1] = axis = createAxis(Math.min.apply(Math, plot.hist), Math.max.apply(Math, plot.hist));
-	}
-    }
-    else {
-	clearSet( axis.ticks );
-    }
-    
-    var min = axis.min;
-    var max = axis.max;
-    var range = max - min;
-    
-    var decPlaces = axis.den - axis.pow;
-    var tickWidth = Math.pow(10, -1 * decPlaces);
-    
-    var nTicks = range/tickWidth
-    var drawHalfTick = axis.half || ( nTicks > 5 );
-    
-    if (nTicks > 10) {
-	tickWidth *= 2;
-    }
-    
-    var tick = Math.ceil(min/tickWidth) * tickWidth;
-    
-    var base = (b ? y : x)( (plotSelect.selectedIndex) ? - tickPad : (1 + tickPad), true); //HACK
-    
-    var toggle = false;
-    
-    if (axis.half) {
-	tickWidth *= .5;
-	if ( (tick - tickWidth) > min ){
-	    toggle = true;
-	}
-    }
-    
-    while (tick < max){
-	if (!b && !plotSelect.selectedIndex) {
-	    var pos = y( 1 - (tick - min) / range, true );
-	}
-	else{
-	    var pos = (b ? x : y)( (tick - min) / range, true );
-	}
-	
-	if (toggle && drawHalfTick) {
-	    // draw half tick
-	    var tickMark = r.circle( b ? pos : base, b ? base : pos, x(halfTickWidth,false) ).attr('stroke-width',0);
-	}
-	else {
-	    var text = ( Math.round(tick * Math.pow(10, decPlaces)) / Math.pow(10,decPlaces)).toFixed( (decPlaces > 0) ? decPlaces : 0 ).toString();
-	    var tickMark = r.text( b ? pos : base, b ? base : pos, text );
-	}
-	axis.ticks.push( tickMark );
-	tick += tickWidth;
-	toggle = !toggle;
-    }
-    
-    axis.ticks.attr( 'fill', plot.color);	
-    
-};
 
 //produce tick mark locations from endpoints and desired density
 function getTickCoords(min, max) {
@@ -272,53 +268,17 @@ function newOption (name) {
 
 // queries the slider and draws a histogram
 function binsChanged () {
+
     var plot = activePlot();
+
     var bins = binSlider.valueAsNumber;
 
     var hist = binData( plot.data, bins );
+
     plot.rawHist = hist;
 
-    // changeHistogramValues(plot, hist);
-    drawSmoothed();
-    updateSmoothSlider(plot);
-
+    console.log('bins changed: ' + bins.toString() );
 };
-
-function dataAvailable(plot) {
-    return plot.rawHist != null;
-}
-
-function drawSmoothed() {
-        var plot = activePlot();
-        var raw = plot.rawHist;
-        var m = parseInt(smootherSlider.valueAsNumber);
-        plot.smoothValue = m;
-        var smoothed = movingAverage(raw, m);
-        changeHistogramValues(plot,smoothed);
-};
-
-function setupSmoother() {
-    smootherSlider.step = 1;
-    smootherSlider.min = 1;
-    smootherSlider.value = smootherSlider.min;
-    smootherSlider.onchange = drawSmoothed;
-
-}
-
-function movingAverage(raw, m) {
-    var smoothed = [];
-    var n = raw.length;
-    var i;
-    for (i = 0; i< n - m; i ++) {
-        var nextSmooth = 0.0;
-        var j;
-        for (j = 0; j < m; j++) {
-            nextSmooth+=raw[i+j];
-        }
-        smoothed.push(nextSmooth / m);
-    }
-    return smoothed;
-}
 
 function changeHistogramValues(plot, hist) {
     var bins = hist.length;
@@ -367,46 +327,6 @@ function colorChanged () {
     plot.bars.attr('fill',color);
     plot.axes[0].ticks.attr('fill',color);
     plot.axes[1].ticks.attr('fill',color);
-};
-
-function plotChanged() {
-    var plot = activePlot();
-    colorWheel.value = plot.color;
-    binSlider.value = plot.bins;
-    updateSmoothSlider(plot);
-    updateVisibleToggle(plot);
-};
-
-function updateVisibleToggle(plot) {
-    if (plot.visible) {
-        visRadio.checked = true;
-        invisRadio.checked = false;
-        return;
-    }
-    invisRadio.checked = true;
-    visRadio.checked = false;
-}
-
-function updateSmoothSlider(plot) {
-    if (!dataAvailable(plot)) return;
-    smootherSlider.max = plot.rawHist.length - 2;
-    smootherSlider.value = plot.smoothValue;
-}
-
-function densityChanged(horizontal, increase) {
-    axis = activePlot().axes[horizontal ? 0 : 1];
-    if (increase) {
-	if (axis.half) {
-	    axis.pow -= 1;
-	}
-    }
-    else {
-	if (!axis.half) {
-	    axis.pow += 1;
-	}
-    }
-    axis.half = !axis.half;
-    drawTicks(horizontal = horizontal);
 };
 
 function parseString(s) {
@@ -470,74 +390,26 @@ function handleDragOver(event) {
     return false;
 };
 
-function handleVisibleRadio(event) {
-    console.log(event);
-    var plot = activePlot();
-    if (visRadio.checked) {
-        unhidePlot(plot);
-        return;
-    }
-    hidePlot(plot);
-}
+$( 
+  function () {
+      
+      canvas = document.getElementById('hist');
 
-function unhidePlot(plot) {
-    plot.visible = true;
-    binsChanged();
-}
-function hidePlot(plot) {
-    plot.visible = false;
-    clearSet(plot.bars);
-}
+      canvas.width = width;
 
-$(function() {
-    
-    r = Raphael("hist", width, height);
-    
-    colorWheel = document.getElementById('color-wheel');
-    
-    binSlider = document.getElementById('bin-slider');
-    
-    plotSelect = document.getElementById('plot-select');
-    
-    tickDecrease = document.getElementById('less-ticks');
-    
-    tickIncrease = document.getElementById('more-ticks');
-    
-    hAxisRadio = document.getElementById('horizontal-axis-radio');
-    visRadio = document.getElementById('visible-radio');
-    invisRadio = document.getElementById('invisible-radio');
+      canvas.height = height;
 
+      c = canvas.getContext('2d');
+      
+      drawBBox();
 
-    
-    dropZone = document.getElementById('dropzone');
-    
-    plotRemove = document.getElementById('remove-plot');
+      plots = $('#plots').first();
 
-    smootherSlider = $("#smoother-slider")[0];
+      $('input[type=range]').prop('min', 20);
+      $('input[type=range]').prop('max', 40);
+      
 
-    setupSmoother();
-    
-    //drawAxes();
+      $('#add-plot').click( function () {createPlot(gaussian(100,1,100))} );
+  }
+   );
 
-    binSlider.onchange =  binsChanged;
-
-    colorWheel.onchange = colorChanged;
-    
-    plotSelect.onchange = plotChanged;
-    
-    tickDecrease.onclick = function () {densityChanged(horizontal = hAxisRadio.checked, increase = false);}
-    
-    tickIncrease.onclick = function () {densityChanged(horizontal = hAxisRadio.checked, increase = true);}
-
-    plotRemove.onclick = removePlot;
-
-    dropZone.ondragover = handleDragOver;
-
-    dropZone.ondrop = handleFileSelect;
-
-    dropZone.style.width = width;
-
-    createPlot( newPlot( gaussian(100000,-100,5 ) , 'test' ) );    
-
-}
-);

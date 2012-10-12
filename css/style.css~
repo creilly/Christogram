@@ -41,9 +41,5 @@ input[type="number"], input[type="color"] {
 width:50px
 }
 
-.accordion-group input[type="text"] {
-width:95%
-}
-
 
 

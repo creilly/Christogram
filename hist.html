@@ -1,67 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Christogram</title>
-    <script src="js/libs/jquery.min.js"></script>
-    <script src="js/libs/raphael.js"></script>
-    <script src="js/hist.js"></script>
-    <link rel="stylesheet" href="css/bootstrap.min.css" />
-    <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="brand" href="#">Christogram</a>
-        </div>
-      </div>
-    </div>
-    <div class="container-fluid">
-  <div class="row-fluid">
-    <div class="span2">
-      <div id="controls">
-        <legend>Controls</legend>
-        <label>Number of bins</label>
-        <input id="bin-slider" type="range" min="0" max="80" step="1"/>
-        <label>Smoothness</label>
-        <input id="smoother-slider" type="range" min="0" max="1" step=".1"/>
-        <label>Color</label>
-        <input id="color-wheel" type="color" value="#0198E1" width="20px"/>
-        <label>Select plot</label>
-        <select id="plot-select"></select>
-        <label>Ticks</label>
-        <div class="btn-group">
-          <button class="btn" id="less-ticks">Less Ticks</button>
-          <button class="btn" id="more-ticks">More Ticks</button>
-        </div>
-         <label class="radio inline">
-          <input id="horizontal-axis-radio" type="radio" name="axis-toggle">Horizontal</input>
-        </label>
-        <label class="radio inline">
-          <input id="vertical-axis-radio" type="radio" name="axis-toggle">Vertical</input>
-        </label>
-        <br />
-         <label class="radio inline">
-          <input id="visible-radio" type="radio" name="visible-toggle" onclick="handleVisibleRadio(this);">Show</input>
-        </label>
-        <label class="radio inline">
-          <input id="invisible-radio" type="radio" name="visible-toggle" onclick="handleVisibleRadio(this);">Hide</input>
-        </label>
-        <br />
-        <button action="" class="btn btn-danger" id="remove-plot">
-         Remove Plot
-       </button>
-   </div>
-    </div>
-    <div class="span10">
-      <div id="hist">
-      </div>
-      <div id="dropzone">Drop Files Here</div>
-      <div id="sample">
-        <a href="sample_data.txt"><b>Sample data</b></a>
-      </div>
-    </div>
-  </div>
-</div>
-</body>
+	<head>
+		<title>christogram</title>
+		<script src="js/libs/jquery.min.js"></script>
+		<script src="js/libs/bootstrap.min.js"></script>
+		<script src="js/hist.js"></script>
+
+		<link rel="stylesheet" href="css/bootstrap.min.css" />
+		<link rel="stylesheet" href="css/style.css" />
+	</head>
+	<body>
+		<div class="navbar navbar-inverse navbar-fixed-top">
+			<div class="navbar-inner">
+				<div class="container">
+					<a class="brand" href="#">christogram</a>
+				</div>
+			</div>
+		</div>
+		<div class="container-fluid">
+			<div class="row-fluid">
+				<div class="span2">
+					<legend>
+						plots
+					</legend>
+					<div class="accordion" id="plots"></div>
+					<a id="add-plot" class="btn btn-small"> <i class="icon-plus"></i> </a>
+				</div>
+				<div class="span8">
+					<canvas id="hist"></canvas>
+
+					<legend>
+						<a class="accordion-toggle" data-toggle="collapse" href="#canvas-controls">plot controls</a>
+					</legend>
+					<div class="collapse in container-fluid" id="canvas-controls">
+						<div class="row-fluid">
+							<label class="span6"> x-label
+								<input id="x-label" type="text" />
+							</label>
+							<label class="span6"> y-label
+								<input id="y-label" type="text" />
+							</label>
+						</div>
+						<div class="row-fluid">
+							<label class="span6"> x-min
+								<input id="x-min" type="range" />
+							</label>
+							<label class="span6"> x-max
+								<input id="x-max" type="range" />
+							</label>
+						</div>
+						<div class="row-fluid">
+							<label class="span6"> size
+								<input id="size" type="range" />
+							</label>
+							<label class="span6"> aspect
+								<input id="asepct" type="range" />
+							</label>
+						</div>
+					</div>
+					<div id="sample">
+						<a href="sample_data.txt"><b>Sample data</b></a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
 </html>
