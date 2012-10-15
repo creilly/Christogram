@@ -92,6 +92,7 @@ function createPlot(data) {
 	var binnumber = $('<input />')
 		.addClass('binnumber')
 		.prop('type', 'number')
+		.prop('min',1)
 		.prop('step', 1)
 		.prop('value', 50);
 
@@ -343,7 +344,7 @@ function handleFileSelect(event) {
 	var file = event.dataTransfer.files[0];
 	// FileList object
 
-	var fileName = file.name;
+	var fileName = file.name ? file.name : 'untitled';
 
 	var reader = new FileReader();
 
@@ -361,7 +362,7 @@ function handleFileSelect(event) {
 			return;
 		}
 
-		createPlot(newPlot(data, fileName));
+		createPlot(data);
 	};
 
 	// Closure to capture the file information.
@@ -412,6 +413,11 @@ function initializeControls() {
 	.on('hidden', function () {
 		$(this).prev().find('i').removeClass('icon-arrow-down').addClass('icon-arrow-right')
 	});
+	
+	$('#sample').tooltip();
+	
+	window.addEventListener('dragover', handleDragOver, false);
+  	window.addEventListener('drop', handleFileSelect, false);
 
 };
 
