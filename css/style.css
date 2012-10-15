@@ -1,14 +1,38 @@
 body {
-      padding-top: 60px;
+
+	padding-top: 60px;
 }
 
-#dropzone {
-border:2px dashed #bbb;
--moz-border-radius:5px;
--webkit-border-radius:5px;
-border-radius:5px;
-padding:25px;
-text-align:center;
-font:20pt bold,"Vollkorn";
-color:#bbb;
+#drop-zone {
+
+	border: 2px dashed #bbb;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	padding-top: 25px;
+	padding-bottom: 25px;
+	text-align: center;
+	font: 20pt bold, "Vollkorn";
+	color: #bbb;
 }
+
+#color-wheel {
+
+	width: 20px;
+}
+
+a:hover, i:hover, .accordion-toggle:hover {
+	color: #005580;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+.accordion-group, #add-plot {
+
+	color: black;
+	background-color: #E6E6E6;
+	border: 3px solid #919191;
+}
+
+
+

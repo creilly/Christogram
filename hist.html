@@ -1,67 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Christogram</title>
-    <script src="js/libs/jquery.min.js"></script>
-    <script src="js/libs/raphael.js"></script>
-    <script src="js/hist.js"></script>
-    <link rel="stylesheet" href="css/bootstrap.min.css" />
-    <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="brand" href="#">Christogram</a>
-        </div>
-      </div>
-    </div>
-    <div class="container-fluid">
-  <div class="row-fluid">
-    <div class="span2">
-      <div id="controls">
-        <legend>Controls</legend>
-        <label>Number of bins</label>
-        <input id="bin-slider" type="range" min="0" max="80" step="1"/>
-        <label>Smoothness</label>
-        <input id="smoother-slider" type="range" min="0" max="1" step=".1"/>
-        <label>Color</label>
-        <input id="color-wheel" type="color" value="#0198E1" width="20px"/>
-        <label>Select plot</label>
-        <select id="plot-select"></select>
-        <label>Ticks</label>
-        <div class="btn-group">
-          <button class="btn" id="less-ticks">Less Ticks</button>
-          <button class="btn" id="more-ticks">More Ticks</button>
-        </div>
-         <label class="radio inline">
-          <input id="horizontal-axis-radio" type="radio" name="axis-toggle">Horizontal</input>
-        </label>
-        <label class="radio inline">
-          <input id="vertical-axis-radio" type="radio" name="axis-toggle">Vertical</input>
-        </label>
-        <br />
-         <label class="radio inline">
-          <input id="visible-radio" type="radio" name="visible-toggle" onclick="handleVisibleRadio(this);">Show</input>
-        </label>
-        <label class="radio inline">
-          <input id="invisible-radio" type="radio" name="visible-toggle" onclick="handleVisibleRadio(this);">Hide</input>
-        </label>
-        <br />
-        <button action="" class="btn btn-danger" id="remove-plot">
-         Remove Plot
-       </button>
-   </div>
-    </div>
-    <div class="span10">
-      <div id="hist">
-      </div>
-      <div id="dropzone">Drop Files Here</div>
-      <div id="sample">
-        <a href="sample_data.txt"><b>Sample data</b></a>
-      </div>
-    </div>
-  </div>
-</div>
-</body>
+	<head>
+		<title>christogram</title>
+		<script src="js/libs/jquery.js"></script>
+		<script src="js/libs/bootstrap.js"></script>
+		<script src="js/hist.js"></script>
+
+		<link rel="stylesheet" href="css/bootstrap.css" />
+		<link rel="stylesheet" href="css/style.css" />
+	</head>
+	<body>
+		<div class="navbar navbar-inverse navbar-fixed-top">
+			<div class="navbar-inner">
+				<div class="container">
+					<a class="brand" href="#">christogram</a>
+				</div>
+			</div>
+		</div>
+		<div class="container-fluid">
+			<div class="row-fluid">
+				<div class="span3">
+					<legend>
+						<a class="accordion-toggle" data-toggle="collapse" href="#canvas-controls" style="display: block">plot controls</a>
+					</legend>
+					<form class="collapse in form-horizontal" id="canvas-controls">
+						<div class="control-group">
+							<label class="control-label" for="x-label">x-label</label>
+							<div class="controls">
+								<input id="x-label" type="text">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="y-label">y-label</label>
+							<div class="controls">
+								<input id="y-label" type="text">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="size">size</label>
+							<div class="controls">
+								<input id="size" type="range" min="0" max="100">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="aspect">aspect</label>
+							<div class="controls">
+								<input id="aspect" type="range" min="0" max="100">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="x-min">x-min</label>
+							<div class="controls">
+								<input id="x-min" type="range">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="x-max">x-max</label>
+							<div class="controls">
+								<input id="x-max" type="range">
+							</div>
+						</div>
+					</form>
+					<legend>
+						<a class="accordion-toggle" data-toggle="collapse" href="#plots" style="display: block">plots</a>
+					</legend>
+					<div class="accordion collapse in" id="plots"></div>
+					<a id="add-plot" class="btn btn-small"> <i class="icon-plus"> </i> </a>
+				</div>
+
+				<div class="span9">
+					<canvas id="hist"></canvas>
+				</div>
+			</div>
+			<hr />
+			<input id="tmp" type="number" />
+			<div id="sample">
+				<a href="sample_data.txt" target="_blank"><b>Sample data</b></a>
+			</div>
+		</div>
+	</body>
 </html>

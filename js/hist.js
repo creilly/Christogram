@@ -1,543 +1,490 @@
-var height = 400, width = 800;
+var height = 500, width = 700;
 var pad = .2;
 var barPad = .2;
 var tickPad = .05;
 var halfTickWidth = .005;
 
-//to represent svg canvas on document load
-var r = null;
+//to represent canvas on document load
+var canvas = null;
+
+//drawing context
+var c = null;
+
 //to represent bars on document load
-var plots = [];
-//index of active histogram
-
-//controls
-var plotSelect = null;
-var colorWheel = null;
-var binSlider = null;
-var tickDecrease = null;
-var tickIncrease = null;
-var hAxisRadio = null;
-var dropZone = null;
-var plotRemove = null;
-
-//create new plot object from a data set and name
-function newPlot(data, name){
-
-    data = data.sort(function (a,b) {return a-b});
-    var plot = new Object();
-    
-    //base data
-    plot.data = data;
-    plot.name = name;
-    
-    //control settings
-    plot.color = Raphael.getColor();
-    plot.bins = binSlider.defaultValue;
-
-    plot.smoothValue = 1;
-    plot.visible = true;
-    
-    //histogram
-    plot.hist = null;
-    
-    //svg content
-    plot.bars = r.set();
-    
-    //axes
-    var axes = [];
-    //horizontal
-    axes[0] = null;
-    //vertical
-    axes[1] = null;
-    plot.axes = axes;
-    
-    return plot;
-};
-
-function createAxis (min, max) {
-    var axis = new Object();
-    axis.min = min;
-    axis.max = max;
-    var range = max - min;
-    var pow = Math.ceil(Math.log(range)/Math.log(10));
-    var half = false;
-    while ( ( ( range / Math.pow(10,pow) ) * ( half ? 2 : 1 ) ) < 4 ) {
-	pow -= (half ? 1 : 0);
-	half = !half;
-    }
-    axis.pow = pow;
-    axis.half = half;
-    axis.den = 0;
-    
-    axis.ticks = r.set();
-    return axis;
-};
+var plots = null;
 
 //called when creating new plot
-function createPlot(plot){
+var plotCounter = 1;
 
-    plots.push(plot);
-    
-    plotSelect.selectedIndex = newOption(plot.name);
-    
-    plotChanged();
-    
-    binsChanged();
-    
-    drawTicks(horizontal = true);
-    
+function createPlot(data) {
+
+	//@off
+
+	var plotName = 'plot' + plotCounter.toString();
+
+	var plot = $('<div>')
+		.addClass('accordion-group')
+		.addClass('alert')
+		.addClass('fade')
+		.addClass('in')
+		.addClass('plot')
+		.data('data', data.sort(function(a,b){return a - b}));
+
+	var close = $('<a><i class="icon-remove" /></a>')
+		.addClass('close')
+		.attr('data-dismiss', 'alert');
+
+	plot.append(close);
+
+	var heading = $('<div>')
+		.addClass('accordion-heading')
+		.addClass('container-fluid');
+
+	var headingrow = $('<div></div>')
+		.addClass('row-fluid');
+
+	var active = $('<input />')
+		.addClass('span3')
+		.addClass('active')
+		.prop('type', 'checkbox')
+		.prop('checked', 'true');
+
+	headingrow.append(active);
+
+	var toggle = $('<a>')
+		.addClass('accordion-toggle')
+		.addClass('span9')
+		.addClass('plot-title')
+		.attr('href', '#' + plotName)
+		.attr('data-parent', '#' + plots.attr('id'))
+		.attr('data-toggle', 'collapse')
+		.html(plotName);
+
+	headingrow.append(toggle);
+
+	heading.append(headingrow);
+
+	plot.append(heading);
+
+	var body = $('<div>')
+		.addClass('accordion-body')
+		.addClass('collapse')
+		.attr('id', plotName);
+
+	var properties = $('<form>')
+		.addClass('accordion-inner');
+
+	properties.append($('<label>' + 'Plot Name' + '</label>'));
+
+	var title = $('<input />')
+		.addClass('title')
+		.prop('type', 'text')
+		.prop('value', plotName);
+
+	properties.append(title);
+
+	properties.append($('<label>' + 'bin number' + '</label>'));
+
+	var binnumber = $('<input />')
+		.addClass('binnumber')
+		.prop('type', 'number')
+		.prop('step', 1)
+		.prop('value', 50);
+
+	properties.append(binnumber);
+
+	properties.append($('<label>' + 'color' + '</label>'));
+
+	var color = $('<input />')
+		.addClass('color')
+		.prop('type', 'color');
+
+	properties.append(color);
+
+	body.append(properties);
+
+	plot.append(body);
+	
+	//@on
+
+	//handle logic
+
+	plot.bind('close', plotRemoved);
+
+	// start shown
+	active.trigger('change');
+	// hide/show
+	active.change(activeChanged);
+
+	// change title on enter pressed
+	title.keyup(function(e) {
+		if (e.keyCode == 13) {
+			titleChanged(this);
+		}
+	});
+
+	// binnumber
+	binnumber.prop('value',50)
+	binnumber.change(binnumberChanged)
+
+	//color
+	color.change(colorChanged);
+
+	var initColor = '#';
+
+	var rgb = hslToRgb(((23 + 3 * plotCounter ) / 13 ) % 1, .5, .5);
+
+	for (var i in rgb) {
+		initColor += Math.round(rgb[i]).toString(16);
+	}
+
+	color.prop('value', initColor);
+
+	color.trigger('change');
+
+	plot.addClass('initialized');
+
+	plots.append(plot);
+
+	toggle.trigger('click.collapse.data-api');
+	
+	updateCanvas();
+
+	plotCounter++;
 };
 
-function removePlot() {
-    plot = activePlot();
-    clearSet(plot.bars);
-    clearSet(plot.axes[0]);
-    clearSet(plot.axes[1]);
-    
-    plotSelect.remove(plotSelect.selectedIndex);
-};
+function activeChanged() {
+	updateCanvas();
+}
+
+function binnumberChanged() {
+	var plot = $(this).parents('.plot');
+	if (boolUpdate(plot)) {
+		updateCanvas();
+	}
+}
+
+function colorChanged() {
+	var plot = $(this).parents('.plot');
+	$('.plot-title', plot).css('color', this.value);
+	if (boolUpdate(plot)) {
+		updateCanvas();
+	}
+		
+}
+
+function titleChanged(el) {
+	var plot = $(el).parents('.plot');
+	$('.plot-title', plot).text(el.value);
+}
+
+function plotRemoved() {
+	updateCanvas();
+}
+
+function boolUpdate(plot) {
+	var result = plot.hasClass('initialized');
+	result = result && $('.active', plot).is(':checked');
+	return result
+}
+
+function updateCanvas() {
+	var plots = $('.plot').has('.active:checked')
+	var min = 'null';
+	var max = 'null'; 
+	plots.each(function () {
+		plotData = $(this).data('data');
+		var plotMin = plotData[0];
+		var plotMax = plotData[plotData.length - 1]
+		if (min == 'null') {
+			min = plotMin;
+			max = plotMax;
+			return
+		}
+		min = (plotMin - min > 0) ? min : plotMin
+		max = (plotMax - max > 0) ? plotMax : max
+	});
+
+	var min_raw = parseInt($('#x-min').prop('value')); 
+	var max_raw = parseInt($('#x-max').prop('value'));
+	var min = min + min_raw / 100 * max_raw / 100 * (max-min);
+	var max = min + max_raw / 100 * (max - min);
+	
+	canvas.width = canvas.width;
+	
+	plots.each(function () {
+		var plot = $(this);
+		var hist = binData(plot.data('data'),parseInt(plot.find('.binnumber').prop('value')),min,max);
+		var histMax = Math.max.apply(null,hist);
+		var color = hexToRgb(plot.find('.color').prop('value'));
+		
+		c.fillStyle = 'rgba(' + color + ',.7)'
+		c.beginPath();
+		for (var iii in hist) {
+			c.rect(1 + iii/hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height, canvas.width / parseInt(plot.find('.binnumber').prop('value')) - 2,  hist[iii] / histMax * canvas.height);
+		}
+		c.closePath();
+		c.fill();
+	});
+}
+
+function hexToRgb(hex) {
+	rgb = [];
+	var iii = 0;
+    while (iii < 3) {
+    	rgb.push(parseInt(hex.substring(2 * iii + 1, 2 * iii + 3),16).toString());
+    	iii++;
+    }
+    return rgb.join(',');
+}
 
 // scaling functions.  input ranges from 0 to 1.  origin is bottom left.
-function x ( d, p ) {
-    if (p) {
-	return width * ( ( 1 - pad ) * d + pad / 2 );
-    }
-    else {
-	return width * ( 1 - pad ) * d;
-    }
+function x(d, p) {
+	if (p) {
+		return width * ((1 - pad ) * d + pad / 2 );
+	} else {
+		return width * (1 - pad ) * d;
+	}
 };
 
-function y ( d, p ) {
-    if (p) {
-	return height * ( ( 1 - pad / 2 ) - ( 1 - pad ) * d );
-    }
-    else {
-	return ( 1 - pad ) * height * d;
-    }
+function y(d, p) {
+	if (p) {
+		return height * ((1 - pad / 2 ) - (1 - pad ) * d );
+	} else {
+		return (1 - pad ) * height * d;
+	}
 };
 
-function clearSet( set ) {
-    while( set.length ){
-	set.pop().remove();
-    }
-};
-
-function drawTicks(horizontal) {
-
-    // b stands for boolean
-    var b = horizontal
-
-    var plot = activePlot();
-
-    var axis = plot.axes[ b ? 0 : 1 ]
-    
-    if (axis == null) {
-	if (b) {
-	    plot.axes[0] = axis = createAxis(plot.data[0], plot.data[plot.data.length-1])
-	}
-	else {
-	    plot.axes[1] = axis = createAxis(Math.min.apply(Math, plot.hist), Math.max.apply(Math, plot.hist));
-	}
-    }
-    else {
-	clearSet( axis.ticks );
-    }
-    
-    var min = axis.min;
-    var max = axis.max;
-    var range = max - min;
-    
-    var decPlaces = axis.den - axis.pow;
-    var tickWidth = Math.pow(10, -1 * decPlaces);
-    
-    var nTicks = range/tickWidth
-    var drawHalfTick = axis.half || ( nTicks > 5 );
-    
-    if (nTicks > 10) {
-	tickWidth *= 2;
-    }
-    
-    var tick = Math.ceil(min/tickWidth) * tickWidth;
-    
-    var base = (b ? y : x)( (plotSelect.selectedIndex) ? - tickPad : (1 + tickPad), true); //HACK
-    
-    var toggle = false;
-    
-    if (axis.half) {
-	tickWidth *= .5;
-	if ( (tick - tickWidth) > min ){
-	    toggle = true;
-	}
-    }
-    
-    while (tick < max){
-	if (!b && !plotSelect.selectedIndex) {
-	    var pos = y( 1 - (tick - min) / range, true );
-	}
-	else{
-	    var pos = (b ? x : y)( (tick - min) / range, true );
-	}
-	
-	if (toggle && drawHalfTick) {
-	    // draw half tick
-	    var tickMark = r.circle( b ? pos : base, b ? base : pos, x(halfTickWidth,false) ).attr('stroke-width',0);
-	}
-	else {
-	    var text = ( Math.round(tick * Math.pow(10, decPlaces)) / Math.pow(10,decPlaces)).toFixed( (decPlaces > 0) ? decPlaces : 0 ).toString();
-	    var tickMark = r.text( b ? pos : base, b ? base : pos, text );
-	}
-	axis.ticks.push( tickMark );
-	tick += tickWidth;
-	toggle = !toggle;
-    }
-    
-    axis.ticks.attr( 'fill', plot.color);	
-    
-};
-
-//produce tick mark locations from endpoints and desired density
-function getTickCoords(min, max) {
-    var range = max - min;
-    var tickWidth = Math.pow(10, Math.ceil( Math.log(range) / Math.log(10) ) - 1);
-    
-    var tick = Math.ceil(min/tickWidth) * tickWidth;
-    var ticks = [];
-    while (tick < max){
-	ticks.push(tick);
-	tick += tickWidth;
-    }
-    return ticks;
+function drawBBox() {
+	var thickness = 5;
+	c.lineWidth = 2 * thickness;
+	c.rect(thickness, thickness, canvas.width - 2 * thickness, canvas.height - 2 * thickness);
+	c.stroke();
 };
 
 function activePlot() {
-    return plots[plotSelect.selectedIndex];
+	return plots[plotSelect.selectedIndex];
 };
 
 // get an array of n gaussian distributed (approx) random numbers from 0 to 1
-function gaussian (n, mean, spread) {
-    
-    var ran = Math.random;
+function gaussian(n, mean, spread) {
 
-    var data = [];
+	var ran = Math.random;
 
-    for (var i = 0; i < n; i++){
-	data[i] = ( (ran() + ran() + ran()) / 3 - .5 ) * spread + mean;
-    }
-    
-    return data;
-};
+	var data = [];
 
-function drawAxes () {
-    r.path ( 'M' + x(0,true).toString() + ',' + y(1,true).toString() + 
-	     'L' + x(0,true).toString() + ',' + y(0,true).toString() + 
-	     'L' + x(1,true).toString() + ',' + y(0,true).toString() );
+	for (var i = 0; i < n; i++) {
+		data[i] = ((ran() + ran() + ran()) / 3 - .5 ) * spread + mean;
+	}
+
+	return data;
 };
 
 // returns a function that will find the bin number for you
-function binner ( bins, start, end ) {
-    return function ( x ) {
-	return Math.floor( ( x - start ) * bins / ( end - start ) )
-    };
+function binner(bins, start, end) {
+	return function(x) {
+		return Math.floor((x - start ) * bins / (end - start ))
+	};
 };
 
 // creates a binned array from data and number of bins
-function binData( data, bins ) {
-    
-    var start = data[0];
-    var end = data[data.length -1];
+function binData(data, bins, min, max) {
 
-    var bin = binner( bins, start, end );
-    
-    var hist = [];
-    
-    for (var i = 0; i <= bins; i++){
-	hist[i] = 0;
-    }
+	var bin = binner(bins, min, max);
 
-    for (var i = 0; i < data.length; i++){
-	hist[bin(data[i])]++;
-    }
+	var hist = [];
 
-    return hist;
+	for (var i = 0; i <= bins; i++) {
+		hist[i] = 0;
+	}
 
-};
+	for (var i = 0; i < data.length; i++) {
+		if ( ( data[i] >= min ) && ( data[i] <= max ) ) {
+			hist[bin(data[i])]++;
+			}
+	}
 
-//add select option, returns option's index
-function newOption (name) {
-    var option = document.createElement('option');
-    option.text = name;
-    plotSelect.add(option, null);
-    return plotSelect.options.length - 1;
-}
-
-// queries the slider and draws a histogram
-function binsChanged () {
-    var plot = activePlot();
-    var bins = binSlider.valueAsNumber;
-
-    var hist = binData( plot.data, bins );
-    plot.rawHist = hist;
-
-    // changeHistogramValues(plot, hist);
-    drawSmoothed();
-    updateSmoothSlider(plot);
+	return hist;
 
 };
-
-function dataAvailable(plot) {
-    return plot.rawHist != null;
-}
-
-function drawSmoothed() {
-        var plot = activePlot();
-        var raw = plot.rawHist;
-        var m = parseInt(smootherSlider.valueAsNumber);
-        plot.smoothValue = m;
-        var smoothed = movingAverage(raw, m);
-        changeHistogramValues(plot,smoothed);
-};
-
-function setupSmoother() {
-    smootherSlider.step = 1;
-    smootherSlider.min = 1;
-    smootherSlider.value = smootherSlider.min;
-    smootherSlider.onchange = drawSmoothed;
-
-}
-
-function movingAverage(raw, m) {
-    var smoothed = [];
-    var n = raw.length;
-    var i;
-    for (i = 0; i< n - m; i ++) {
-        var nextSmooth = 0.0;
-        var j;
-        for (j = 0; j < m; j++) {
-            nextSmooth+=raw[i+j];
-        }
-        smoothed.push(nextSmooth / m);
-    }
-    return smoothed;
-}
 
 function changeHistogramValues(plot, hist) {
-    var bins = hist.length;
 
-    clearSet(plot.bars);
-
-    plot.bins = bins;
-
-    plot.hist = hist;
-
-    var max = Math.max.apply(null, hist);
-
-    var binWidth = x( 1 / bins, false );
-    
-    var barWidth = binWidth * ( 1 - barPad );
-    var barOffset = (binWidth - barWidth) / 2;
-    
-    for (var i = 0; i < bins; i++) {
-    
-    var height = hist[i] / max;
-    var yLoc = y((plotSelect.selectedIndex) ? height : 1,true);
-    var barHeight = y(height, false);
-    
-    var xLoc = x( i / bins, true ) + barOffset;
-    
-    var rect = r.rect( xLoc, yLoc, barWidth, barHeight )    
-    plot.bars.push(rect);
-    }
-    
-    plot.bars.attr('fill',colorWheel.value);
-    plot.bars.attr('fill-opacity', .5);
-    plot.bars.attr('stroke-width',0);
-    
-    if ( plot.axes[1] != null ){
-    clearSet(plot.axes[1].ticks);
-    plot.axes[1] = null;
-    }
-    drawTicks(horizontal = false);
+	
 }
-
-//queries color slider and sets outline color of bars
-function colorChanged () {
-    var plot = activePlot();
-    var color = colorWheel.value;
-    plot.color = colorWheel.value;
-    plot.bars.attr('fill',color);
-    plot.axes[0].ticks.attr('fill',color);
-    plot.axes[1].ticks.attr('fill',color);
-};
-
-function plotChanged() {
-    var plot = activePlot();
-    colorWheel.value = plot.color;
-    binSlider.value = plot.bins;
-    updateSmoothSlider(plot);
-    updateVisibleToggle(plot);
-};
-
-function updateVisibleToggle(plot) {
-    if (plot.visible) {
-        visRadio.checked = true;
-        invisRadio.checked = false;
-        return;
-    }
-    invisRadio.checked = true;
-    visRadio.checked = false;
-}
-
-function updateSmoothSlider(plot) {
-    if (!dataAvailable(plot)) return;
-    smootherSlider.max = plot.rawHist.length - 2;
-    smootherSlider.value = plot.smoothValue;
-}
-
-function densityChanged(horizontal, increase) {
-    axis = activePlot().axes[horizontal ? 0 : 1];
-    if (increase) {
-	if (axis.half) {
-	    axis.pow -= 1;
-	}
-    }
-    else {
-	if (!axis.half) {
-	    axis.pow += 1;
-	}
-    }
-    axis.half = !axis.half;
-    drawTicks(horizontal = horizontal);
-};
 
 function parseString(s) {
-    if ( s.search(/^[\d.]+|[\s,]+$/) == 0 ) {
-	var data = s.match(/[\d.]+/g);
-	for (var i = 0; i < data.length; i++) {
-	    data[i] = parseFloat(data[i]);
+	if (s.search(/^[\d.]+|[\s,]+$/) == 0) {
+		var data = s.match(/[\d.]+/g);
+		for (var i = 0; i < data.length; i++) {
+			data[i] = parseFloat(data[i]);
+		}
+		return data;
+	} else {
+		return -1;
 	}
-	return data;
-    }
-    else {
-	return -1;
-    }
 };
 
 function handleFileSelect(event) {
-    
-    console.log('drop detected');
 
-    event.stopPropagation();
-    event.preventDefault();
-    
-    //just get first file
-    var file = event.dataTransfer.files[0]; // FileList object
+	console.log('drop detected');
 
-    var fileName = file.name;
+	event.stopPropagation();
+	event.preventDefault();
 
-    var reader = new FileReader();
+	//just get first file
+	var file = event.dataTransfer.files[0];
+	// FileList object
 
-    function onRead (event) {
-	
-	var dataString = event.target.result;
+	var fileName = file.name;
 
-	var data = parseString(dataString);
+	var reader = new FileReader();
 
-	console.log(data);
+	function onRead(event) {
 
-	if (data == -1) {
-	    //improper data format
-	    console.log('improper data format');
-	    return; 
-	}
+		var dataString = event.target.result;
 
-	createPlot(newPlot(data, fileName));
-    };
+		var data = parseString(dataString);
 
-    // Closure to capture the file information.
-    reader.onload = onRead;
+		console.log(data);
 
-    // Read in the image file as a data URL.
-    reader.readAsText(file);
+		if (data == -1) {
+			//improper data format
+			console.log('improper data format');
+			return;
+		}
 
-    return false;
+		createPlot(newPlot(data, fileName));
+	};
+
+	// Closure to capture the file information.
+	reader.onload = onRead;
+
+	// Read in the image file as a data URL.
+	reader.readAsText(file);
+
+	return false;
 };
 
 function handleDragOver(event) {
-    console.log('drag detected');
-    event.stopPropagation();
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
-    return false;
+	console.log('drag detected');
+	event.stopPropagation();
+	event.preventDefault();
+	event.dataTransfer.dropEffect = 'copy';
+	// Explicitly show this is a copy.
+	return false;
 };
 
-function handleVisibleRadio(event) {
-    console.log(event);
-    var plot = activePlot();
-    if (visRadio.checked) {
-        unhidePlot(plot);
-        return;
-    }
-    hidePlot(plot);
+function initializeControls() {
+
+	//set slider ranges
+	$('input[type=range]').prop('min', 0).prop('max', 100);
+	$('#x-min').prop('value', 0);
+	$('#x-max').prop('value', 100);
+	$('#size, #aspect').prop('value', 50);
+
+	//size or aspect routes to same function
+	$('#size, #aspect').change(dimsChanged);
+
+	//change x-range
+	$('#x-min, #x-max').change(domainChanged)
+
+	//add plot button
+	$('#add-plot').click(function() {
+		if (!plots.hasClass('in')) {
+			console.log('here');
+			plots.prev().children().click();
+		}
+		createPlot(gaussian(10000, 1, 100));
+	});
+
+};
+
+//change x-range
+function domainChanged() {
+	updateCanvas();
 }
 
-function unhidePlot(plot) {
-    plot.visible = true;
-    binsChanged();
+//change canvas dimensions
+function dimsChanged() {
+	var aspect = $('#aspect').prop('value');
+	var size = $('#size').prop('value');
+	canvas.width = width * size / 50 * (.3 + aspect / 100 * .4 ) * 2;
+	canvas.height = height * size / 50 * (.3 + (100 - aspect ) / 100 * .4 ) * 2;
+	updateCanvas();
 }
-function hidePlot(plot) {
-    plot.visible = false;
-    clearSet(plot.bars);
+
+//utility for generating formatted controls
+function controlGroup(name, type) {
+	//@off
+	return $('<div>')
+		.addClass('control-group')
+		.append(
+			$('<label>')
+			.addClass('control-label')
+			.prop('for', name)
+			.html(name))
+			.append(
+				$('<div>')
+				.addClass('controls')
+				.append(
+					$('<input />')
+					.prop('id', name)
+					.prop('type', type)
+				)
+			);
+	//@on
 }
 
 $(function() {
-    
-    r = Raphael("hist", width, height);
-    
-    colorWheel = document.getElementById('color-wheel');
-    
-    binSlider = document.getElementById('bin-slider');
-    
-    plotSelect = document.getElementById('plot-select');
-    
-    tickDecrease = document.getElementById('less-ticks');
-    
-    tickIncrease = document.getElementById('more-ticks');
-    
-    hAxisRadio = document.getElementById('horizontal-axis-radio');
-    visRadio = document.getElementById('visible-radio');
-    invisRadio = document.getElementById('invisible-radio');
 
+	canvas = document.getElementById('hist');
 
-    
-    dropZone = document.getElementById('dropzone');
-    
-    plotRemove = document.getElementById('remove-plot');
+	canvas.width = width;
 
-    smootherSlider = $("#smoother-slider")[0];
+	canvas.height = height;
 
-    setupSmoother();
-    
-    //drawAxes();
+	c = canvas.getContext('2d');
 
-    binSlider.onchange =  binsChanged;
+	plots = $('#plots');
 
-    colorWheel.onchange = colorChanged;
-    
-    plotSelect.onchange = plotChanged;
-    
-    tickDecrease.onclick = function () {densityChanged(horizontal = hAxisRadio.checked, increase = false);}
-    
-    tickIncrease.onclick = function () {densityChanged(horizontal = hAxisRadio.checked, increase = true);}
+	dimsChanged();
 
-    plotRemove.onclick = removePlot;
+	initializeControls();
+	
+	createPlot(gaussian(100000,30,4.0));
+	
+	createPlot(gaussian(100000,31,5.0));
+});
 
-    dropZone.ondragover = handleDragOver;
+function hslToRgb(h, s, l) {
+	var r, g, b;
 
-    dropZone.ondrop = handleFileSelect;
+	if (s == 0) {
+		r = g = b = l;
+		// achromatic
+	} else {
+		function hue2rgb(p, q, t) {
+			if (t < 0)
+				t += 1;
+			if (t > 1)
+				t -= 1;
+			if (t < 1 / 6)
+				return p + (q - p) * 6 * t;
+			if (t < 1 / 2)
+				return q;
+			if (t < 2 / 3)
+				return p + (q - p) * (2 / 3 - t) * 6;
+			return p;
+		}
 
-    dropZone.style.width = width;
+		var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+		var p = 2 * l - q;
+		r = hue2rgb(p, q, h + 1 / 3);
+		g = hue2rgb(p, q, h);
+		b = hue2rgb(p, q, h - 1 / 3);
+	}
 
-    createPlot( newPlot( gaussian(100000,-100,5 ) , 'test' ) );    
-
+	return [r * 255, g * 255, b * 255];
 }
-);
+
