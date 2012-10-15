@@ -21,7 +21,10 @@
 			<div class="row-fluid">
 				<div class="span3">
 					<legend>
-						<a class="accordion-toggle" data-toggle="collapse" href="#canvas-controls" style="display: block">plot controls</a>
+						<a class="accordion-toggle" data-toggle="collapse" href="#canvas-controls" style="display: block">
+							<i class="icon-arrow-down"></i>
+							plot controls
+						</a>
 					</legend>
 					<form class="collapse in form-horizontal" id="canvas-controls">
 						<div class="control-group">
@@ -62,10 +65,16 @@
 						</div>
 					</form>
 					<legend>
-						<a class="accordion-toggle" data-toggle="collapse" href="#plots" style="display: block">plots</a>
+						<a id="add-plot" class="btn btn-small pull-right"> <i class="icon-plus"> </i> </a>
+						<a class="accordion-toggle" data-toggle="collapse" href="#plots" style="display: block">
+							<i class="icon-arrow-down"></i>
+							plots
+							</a>
 					</legend>
-					<div class="accordion collapse in" id="plots"></div>
-					<a id="add-plot" class="btn btn-small"> <i class="icon-plus"> </i> </a>
+					<div class="accordion collapse in" id="plots">
+						<div id="no-plots">no plots</div>
+					</div>
+					
 				</div>
 
 				<div class="span9">
@@ -73,9 +82,8 @@
 				</div>
 			</div>
 			<hr />
-			<input id="tmp" type="number" />
 			<div id="sample">
-				<a href="sample_data.txt" target="_blank"><b>Sample data</b></a>
+				<a href="sample_data.txt" target="_blank"><b>sample data</b></a>
 			</div>
 		</div>
 	</body>

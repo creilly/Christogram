@@ -19,6 +19,10 @@ var plotCounter = 1;
 function createPlot(data) {
 
 	//@off
+	
+	if (plots.children().length < 2) {
+		plots.children('#no-plots').hide();
+	}
 
 	var plotName = 'plot' + plotCounter.toString();
 
@@ -109,7 +113,7 @@ function createPlot(data) {
 
 	//handle logic
 
-	plot.bind('close', plotRemoved);
+	plot.bind('closed', plotRemoved);
 
 	// start shown
 	active.trigger('change');
@@ -144,7 +148,7 @@ function createPlot(data) {
 
 	plot.addClass('initialized');
 
-	plots.append(plot);
+	plots.prepend(plot);
 
 	toggle.trigger('click.collapse.data-api');
 	
@@ -179,6 +183,9 @@ function titleChanged(el) {
 }
 
 function plotRemoved() {
+	if (plots.children().length < 3) {
+		plots.children('#no-plots').show();
+	}
 	updateCanvas();
 }
 
@@ -393,9 +400,17 @@ function initializeControls() {
 	$('#add-plot').click(function() {
 		if (!plots.hasClass('in')) {
 			console.log('here');
-			plots.prev().children().click();
+			plots.prev().children('.accordion-toggle').click();
 		}
-		createPlot(gaussian(10000, 1, 100));
+		createPlot(gaussian(10000, 1, 100));		// window.open(canvas.toDataURL('image/png'));
+	});
+	
+	$('#plots, #canvas-controls')
+	.on('shown', function () {
+		$(this).prev().find('i').removeClass('icon-arrow-right').addClass('icon-arrow-down')
+	})
+	.on('hidden', function () {
+		$(this).prev().find('i').removeClass('icon-arrow-down').addClass('icon-arrow-right')
 	});
 
 };
@@ -452,9 +467,9 @@ $(function() {
 
 	initializeControls();
 	
-	createPlot(gaussian(100000,30,4.0));
-	
-	createPlot(gaussian(100000,31,5.0));
+	// createPlot(gaussian(100000,30,4.0));
+// 	
+	// createPlot(gaussian(100000,31,5.0));
 });
 
 function hslToRgb(h, s, l) {
