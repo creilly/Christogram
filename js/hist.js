@@ -117,8 +117,10 @@ function createPlot(data) {
 	//@on
 
 	//handle logic
+	
+	$('input',plot).addClass('input-medium');
 
-	plot.bind('closed', plotRemoved);
+	plot.bind('close', plotRemoved);
 
 	// start shown
 	active.trigger('change');
@@ -201,6 +203,7 @@ function boolUpdate(plot) {
 }
 
 function updateCanvas() {
+	canvas.width = canvas.width;
 	var plots = $('.plot').has('.active:checked')
 	var min = 'null';
 	var max = 'null'; 
@@ -220,9 +223,7 @@ function updateCanvas() {
 	var min_raw = parseInt($('#x-min').prop('value')); 
 	var max_raw = parseInt($('#x-max').prop('value'));
 	var min = min + min_raw / 100 * max_raw / 100 * (max-min);
-	var max = min + max_raw / 100 * (max - min);
-	
-	canvas.width = canvas.width;
+	var max = min + max_raw / 100 * (max - min);
 	
 	plots.each(function () {
 		var plot = $(this);
@@ -232,13 +233,14 @@ function updateCanvas() {
 		var histMax = Math.max.apply(null,hist);
 		var color = hexToRgb(plot.find('.color').prop('value'));
 		
-		c.fillStyle = 'rgba(' + color + ',.7)'
+		c.fillStyle = 'rgba(' + color + ',.7)';
 		c.beginPath();
 		for (var iii in hist) {
-			c.rect(1 + iii/hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height, canvas.width / bins - 2,  hist[iii] / histMax * canvas.height);
+			c.rect(2 + iii/hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height, canvas.width / bins - 4,  hist[iii] / histMax * canvas.height);
 		}
 		c.closePath();
 		c.fill();
+		c.stroke();
 	});
 }
 
@@ -391,7 +393,7 @@ function handleDragOver(event) {
 };
 
 function initializeControls() {
-
+	$('input').addClass('input-medium');
 	//set slider ranges
 	$('input[type=range]').prop('min', 0).prop('max', 100);
 	$('#x-min').prop('value', 0);
@@ -405,15 +407,18 @@ function initializeControls() {
 	$('#x-min, #x-max').change(domainChanged)
 
 	//add plot button
-	$('#add-plot').click(function() {$('input[type=file]').click();});
+	$('#add-plot').click(function() {$('input[type=file]').click();}).tooltip({delay: {show: 500, hide: 100}});
 	$('input[type=file]').change(handleFileSelect);
+	
+	//export plot button
+	$('#export-plot').click(function() {window.open(canvas.toDataURL('image/png'));}).tooltip({delay: {show: 500, hide: 100}});
 	
 	$('#plots, #canvas-controls')
 	.on('shown', function () {
-		$(this).prev().find('i').removeClass('icon-arrow-right').addClass('icon-arrow-down')
+		$(this).prev().find('i[nav-arrow]').removeClass('icon-arrow-right').addClass('icon-arrow-down')
 	})
 	.on('hidden', function () {
-		$(this).prev().find('i').removeClass('icon-arrow-down').addClass('icon-arrow-right')
+		$(this).prev().find('i[nav-arrow]').removeClass('icon-arrow-down').addClass('icon-arrow-right')
 	});
 	
 	$('#sample').tooltip();
