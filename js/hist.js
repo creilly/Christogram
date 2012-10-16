@@ -120,7 +120,7 @@ function createPlot(data) {
 	
 	$('input',plot).addClass('input-medium');
 
-	plot.bind('close', plotRemoved);
+	plot.on('closed', plotRemoved);
 
 	// start shown
 	active.trigger('change');
@@ -190,6 +190,7 @@ function titleChanged(el) {
 }
 
 function plotRemoved() {
+	$(this).addClass('dead');
 	if (plots.children().length < 3) {
 		plots.children('#no-plots').show();
 	}
@@ -204,7 +205,7 @@ function boolUpdate(plot) {
 
 function updateCanvas() {
 	canvas.width = canvas.width;
-	var plots = $('.plot').has('.active:checked')
+	var plots = $('.plot:not(.dead)').has('.active:checked');
 	var min = 'null';
 	var max = 'null'; 
 	plots.each(function () {
