@@ -226,14 +226,16 @@ function updateCanvas() {
 	
 	plots.each(function () {
 		var plot = $(this);
-		var hist = binData(plot.data('data'),parseInt(plot.find('.binnumber').prop('value')),min,max);
+		var data = plot.data('data');
+		var bins = Math.ceil(parseInt(plot.find('.binnumber').prop('value')) * (max - min) / (data[data.length - 1] - data[0]));
+		var hist = binData(data,bins,min,max);
 		var histMax = Math.max.apply(null,hist);
 		var color = hexToRgb(plot.find('.color').prop('value'));
 		
 		c.fillStyle = 'rgba(' + color + ',.7)'
 		c.beginPath();
 		for (var iii in hist) {
-			c.rect(1 + iii/hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height, canvas.width / parseInt(plot.find('.binnumber').prop('value')) - 2,  hist[iii] / histMax * canvas.height);
+			c.rect(1 + iii/hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height, canvas.width / bins - 2,  hist[iii] / histMax * canvas.height);
 		}
 		c.closePath();
 		c.fill();
