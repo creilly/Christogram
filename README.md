@@ -1,4 +1,4 @@
 Christogram
 ===========
 
-Histogram creator and editor using js, svg, and html
+Histogram creator and editor for the browser
