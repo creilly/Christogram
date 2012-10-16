@@ -17,6 +17,10 @@ var plots = null;
 var plotCounter = 1;
 
 function createPlot(data) {
+		
+	if (!plots.hasClass('in')) {
+		plots.prev().children('.accordion-toggle').click();
+	}
 
 	//@off
 	
@@ -341,7 +345,8 @@ function handleFileSelect(event) {
 	event.preventDefault();
 
 	//just get first file
-	var file = event.dataTransfer.files[0];
+	var file = event.target.files;
+	file = file ? file[0] : event.dataTransfer.files[0];
 	// FileList object
 
 	var fileName = file.name ? file.name : 'untitled';
@@ -398,13 +403,8 @@ function initializeControls() {
 	$('#x-min, #x-max').change(domainChanged)
 
 	//add plot button
-	$('#add-plot').click(function() {
-		if (!plots.hasClass('in')) {
-			console.log('here');
-			plots.prev().children('.accordion-toggle').click();
-		}
-		createPlot(gaussian(10000, 1, 100));		// window.open(canvas.toDataURL('image/png'));
-	});
+	$('#add-plot').click(function() {$('input[type=file]').click();});
+	$('input[type=file]').change(handleFileSelect);
 	
 	$('#plots, #canvas-controls')
 	.on('shown', function () {
