@@ -1,4 +1,4 @@
-var height = 500, width = 700;
+var height = 500, width = 800;
 var pad = .2;
 var barPad = .2;
 var tickPad = .05;
@@ -228,7 +228,7 @@ function updateCanvas() {
 	plots.each(function () {
 		var plot = $(this);
 		var data = plot.data('data');
-		var bins = Math.ceil(parseInt(plot.find('.binnumber').prop('value')) * (max - min) / (data[data.length - 1] - data[0]));
+		var bins = Math.floor(parseInt(plot.find('.binnumber').prop('value')) * (max - min) / (data[data.length - 1] - data[0]));
 		var hist = binData(data,bins,min,max);
 		var histMax = Math.max.apply(null,hist);
 		var color = hexToRgb(plot.find('.color').prop('value'));
@@ -236,47 +236,13 @@ function updateCanvas() {
 		c.fillStyle = 'rgba(' + color + ',.7)';
 		c.beginPath();
 		for (var iii in hist) {
-			c.rect(2 + iii/hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height, canvas.width / bins - 4,  hist[iii] / histMax * canvas.height);
+			c.rect( iii / hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height , canvas.width / bins * .8,  hist[iii] / histMax * canvas.height);
 		}
 		c.closePath();
 		c.fill();
 		c.stroke();
 	});
 }
-
-function hexToRgb(hex) {
-	rgb = [];
-	var iii = 0;
-    while (iii < 3) {
-    	rgb.push(parseInt(hex.substring(2 * iii + 1, 2 * iii + 3),16).toString());
-    	iii++;
-    }
-    return rgb.join(',');
-}
-
-// scaling functions.  input ranges from 0 to 1.  origin is bottom left.
-function x(d, p) {
-	if (p) {
-		return width * ((1 - pad ) * d + pad / 2 );
-	} else {
-		return width * (1 - pad ) * d;
-	}
-};
-
-function y(d, p) {
-	if (p) {
-		return height * ((1 - pad / 2 ) - (1 - pad ) * d );
-	} else {
-		return (1 - pad ) * height * d;
-	}
-};
-
-function drawBBox() {
-	var thickness = 5;
-	c.lineWidth = 2 * thickness;
-	c.rect(thickness, thickness, canvas.width - 2 * thickness, canvas.height - 2 * thickness);
-	c.stroke();
-};
 
 function activePlot() {
 	return plots[plotSelect.selectedIndex];
@@ -313,21 +279,19 @@ function binData(data, bins, min, max) {
 	for (var i = 0; i <= bins; i++) {
 		hist[i] = 0;
 	}
-
-	for (var i = 0; i < data.length; i++) {
-		if ( ( data[i] >= min ) && ( data[i] <= max ) ) {
-			hist[bin(data[i])]++;
-			}
+	var i = 0;
+	
+	while (data[i] < min) {
+		i++;		
+	}
+	while (i < data.length && data[i] < max ) {
+		hist[bin(data[i])]++;
+		i++;
 	}
 
 	return hist;
 
 };
-
-function changeHistogramValues(plot, hist) {
-
-	
-}
 
 function parseString(s) {
 	if (s.search(/^[\d.]+|[\s,]+$/) == 0) {
@@ -348,40 +312,47 @@ function handleFileSelect(event) {
 	event.stopPropagation();
 	event.preventDefault();
 
-	//just get first file
-	var file = event.target.files;
-	file = file ? file[0] : event.dataTransfer.files[0];
+	var files = event.target.files ? event.target.files : event.dataTransfer.files;
+	
 	// FileList object
 
-	var fileName = file.name ? file.name : 'untitled';
+	//var fileName = file.name ? file.name : 'untitled';
+	
+	for (var fileIndex in files) {
+		
+		var file = files[fileIndex];
+		
+		var reader = new FileReader();
 
-	var reader = new FileReader();
-
-	function onRead(event) {
-
-		var dataString = event.target.result;
-
-		var data = parseString(dataString);
-
-		console.log(data);
-
-		if (data == -1) {
-			//improper data format
-			console.log('improper data format');
-			return;
-		}
-
-		createPlot(data);
-	};
-
-	// Closure to capture the file information.
-	reader.onload = onRead;
-
-	// Read in the image file as a data URL.
-	reader.readAsText(file);
+		// Closure to capture the file information.
+		reader.onload = onRead;
+	
+		// Read in the image file as a data URL.
+		reader.readAsText(file);
+	}
 
 	return false;
 };
+
+function onRead(event) {
+
+	var dataString = event.target.result;
+
+	var data = parseString(dataString);
+
+	if (data == -1) {
+		//improper data format
+		createAlert(
+			'error',
+			'Warning',
+			'incorrect file type'
+			);
+		return;
+	}
+
+	createPlot(data);
+}
+
 
 function handleDragOver(event) {
 	console.log('drag detected');
@@ -420,8 +391,6 @@ function initializeControls() {
 	.on('hidden', function () {
 		$(this).prev().find('i[nav-arrow]').removeClass('icon-arrow-down').addClass('icon-arrow-right')
 	});
-	
-	$('#sample').tooltip();
 	
 	window.addEventListener('dragover', handleDragOver, false);
   	window.addEventListener('drop', handleFileSelect, false);
@@ -464,6 +433,33 @@ function controlGroup(name, type) {
 	//@on
 }
 
+function createAlert(type, alert, text) {
+	$('<div>')
+	.addClass('alert')
+	.addClass('alert-' + type)
+	.addClass('fade')
+	.addClass('in')
+	.append(
+		$('<button>')
+		.prop('type','button')
+		.addClass('close')
+		.attr('data-dismiss','alert')
+		.append(
+			$('<i>')
+			.addClass('icon-remove')
+		)
+	)
+	.append(
+		 $('<strong>')
+		 .text(alert + ': ')
+	)
+	.append(
+		$('<span>')
+		.append( ' ' + text)
+	)
+	.prependTo('.control-panel');
+}
+
 $(function() {
 
 	canvas = document.getElementById('hist');
@@ -480,9 +476,9 @@ $(function() {
 
 	initializeControls();
 	
-	// createPlot(gaussian(100000,30,4.0));
-// 	
-	// createPlot(gaussian(100000,31,5.0));
+	createPlot(gaussian(100000,30,4.0));
+	
+	createPlot(gaussian(100000,31,5.0));
 });
 
 function hslToRgb(h, s, l) {
@@ -514,5 +510,15 @@ function hslToRgb(h, s, l) {
 	}
 
 	return [r * 255, g * 255, b * 255];
+}
+
+function hexToRgb(hex) {
+	rgb = [];
+	var iii = 0;
+    while (iii < 3) {
+    	rgb.push(parseInt(hex.substring(2 * iii + 1, 2 * iii + 3),16).toString());
+    	iii++;
+    }
+    return rgb.join(',');
 }
 
