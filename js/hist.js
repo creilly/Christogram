@@ -384,12 +384,8 @@ function initializeControls() {
 	//export plot button
 	$('#export-plot').click(function() {window.open(canvas.toDataURL('image/png'));}).tooltip({delay: {show: 500, hide: 100}});
 	
-	$('#plots, #canvas-controls')
-	.on('shown', function () {
-		$(this).prev().find('i[nav-arrow]').removeClass('icon-arrow-right').addClass('icon-arrow-down')
-	})
-	.on('hidden', function () {
-		$(this).prev().find('i[nav-arrow]').removeClass('icon-arrow-down').addClass('icon-arrow-right')
+	$('.menu-title').click(function () {
+		$('i',$(this)).toggleClass('icon-arrow-right').toggleClass('icon-arrow-down');
 	});
 	
 	window.addEventListener('dragover', handleDragOver, false);
