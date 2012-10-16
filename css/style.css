@@ -1,25 +1,4 @@
-body {
 
-	padding-top: 60px;
-}
-
-#drop-zone {
-
-	border: 2px dashed #bbb;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	border-radius: 5px;
-	padding-top: 25px;
-	padding-bottom: 25px;
-	text-align: center;
-	font: 20pt bold, "Vollkorn";
-	color: #bbb;
-}
-
-#color-wheel {
-
-	width: 20px;
-}
 
 a:hover, i:hover, .accordion-toggle:hover {
 	color: #005580;
@@ -27,12 +6,28 @@ a:hover, i:hover, .accordion-toggle:hover {
 	text-decoration: none;
 }
 
-.accordion-group, #add-plot {
+.accordion-group, #add-plot, #export-plot {
 
 	color: black;
 	background-color: #E6E6E6;
 	border: 3px solid #919191;
 }
 
+#add-plot, #export-plot, .menu-border {
+	padding: 3px 6px;
+}
 
+.menu-border {
+	border: 3px solid #919191;
+	margin: 5px 0px;
+	padding: 7px 10px;
+	border-radius: 10px;
+}
 
+.collapse:not(.in) {
+	margin-bottom: 0px;
+}
+
+form.in {
+	padding-top: 1px;
+}

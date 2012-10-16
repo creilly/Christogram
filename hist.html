@@ -10,7 +10,7 @@
 		<link rel="stylesheet" href="css/style.css" />
 	</head>
 	<body>
-		<div class="navbar navbar-inverse navbar-fixed-top">
+		<div class="navbar navbar-inverse">
 			<div class="navbar-inner">
 				<div class="container">
 					<a class="brand" href="#">christogram</a>
@@ -20,62 +20,63 @@
 		<div class="container-fluid">
 			<div class="row-fluid">
 				<div class="span3">
-					<legend>
-						<a class="accordion-toggle" data-toggle="collapse" href="#canvas-controls" style="display: block">
-							<i class="icon-arrow-down"></i>
-							plot controls
-						</a>
-					</legend>
-					<form class="collapse in form-horizontal" id="canvas-controls">
-						<div class="control-group">
-							<label class="control-label" for="x-label">x-label</label>
-							<div class="controls">
-								<input id="x-label" type="text">
+					<div class="menu-border">
+						<legend>
+							<a id="export-plot" class="btn btn-small pull-right" rel="tooltip" title="export plot as png"> <i class="icon-download"> </i> </a>
+							<a class="accordion-toggle" data-toggle="collapse" href="#canvas-controls" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plot controls </a>
+						</legend>
+						<form class="collapse in form-horizontal" id="canvas-controls">
+							<div class="control-group">
+								<label class="control-label" for="x-label">x-label</label>
+								<div class="controls">
+									<input id="x-label" type="text">
+								</div>
 							</div>
-						</div>
-						<div class="control-group">
-							<label class="control-label" for="y-label">y-label</label>
-							<div class="controls">
-								<input id="y-label" type="text">
+							<div class="control-group">
+								<label class="control-label" for="y-label">y-label</label>
+								<div class="controls">
+									<input id="y-label" type="text">
+								</div>
 							</div>
-						</div>
-						<div class="control-group">
-							<label class="control-label" for="size">size</label>
-							<div class="controls">
-								<input id="size" type="range" min="0" max="100">
+							<div class="control-group">
+								<label class="control-label" for="size">size</label>
+								<div class="controls">
+									<input id="size" type="range" min="0" max="100">
+								</div>
 							</div>
-						</div>
-						<div class="control-group">
-							<label class="control-label" for="aspect">aspect</label>
-							<div class="controls">
-								<input id="aspect" type="range" min="0" max="100">
+							<div class="control-group">
+								<label class="control-label" for="aspect">aspect</label>
+								<div class="controls">
+									<input id="aspect" type="range" min="0" max="100">
+								</div>
 							</div>
-						</div>
-						<div class="control-group">
-							<label class="control-label" for="x-min">x-min</label>
-							<div class="controls">
-								<input id="x-min" type="range">
+							<div class="control-group">
+								<label class="control-label" for="x-min">x-min</label>
+								<div class="controls">
+									<input id="x-min" type="range">
+								</div>
 							</div>
-						</div>
-						<div class="control-group">
-							<label class="control-label" for="x-max">x-max</label>
-							<div class="controls">
-								<input id="x-max" type="range">
+							<div class="control-group">
+								<label class="control-label" for="x-max">x-max</label>
+								<div class="controls">
+									<input id="x-max" type="range">
+								</div>
 							</div>
-						</div>
-					</form>
-					<legend>
-						<a id="add-plot" class="btn btn-small pull-right"> <i class="icon-plus"> </i> </a>
-						<input type="file" style="display: none" accept="text/plain" />
-						<a class="accordion-toggle" data-toggle="collapse" href="#plots" style="display: block">
-							<i class="icon-arrow-down"></i>
-							plots
-						</a>
-					</legend>
-					<div class="accordion collapse in" id="plots">
-						<div id="no-plots">no plots</div>
+						</form>
 					</div>
-					
+					<div class="menu-border">
+						<legend>
+							<a id="add-plot" class="btn btn-small pull-right" rel="tooltip" title="add plot (or just drop file on page!)"> <i class="icon-plus"> </i> </a>
+							<input type="file" style="display: none" accept="text/plain" />
+							<a class="accordion-toggle" data-toggle="collapse" href="#plots" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plots </a>
+						</legend>
+						<div class="accordion collapse in" id="plots">
+							<div id="no-plots">
+								no plots
+							</div>
+						</div>
+					</div>
+
 				</div>
 
 				<div class="span9">
