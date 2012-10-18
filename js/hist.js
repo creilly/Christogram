@@ -249,7 +249,7 @@ function updateCanvas() {
 		c.beginPath();
 		for (var iii in hist) {
 			if (hist[iii]) {
-				drawRect(iii/bins, 0, .8 / bins, hist[iii] / histMax);
+				drawRect(iii/bins, 0, .8 / bins, hist[iii] / histMax);  
 			}
 		}
 		c.closePath();
@@ -272,7 +272,7 @@ function drawLabels() {
 
 function drawRect(x,y,dx,dy) {
 	c.color = "black";
-	c.rect(
+	c.roundRect(
 		canvas.width * (xMargin + x * ( 1 - 2 * xMargin )), 
 		canvas.height * ( 1 - yMargin + ( y - dy ) * ( 1 - 2 * yMargin) ), 
 		canvas.width * dx * (1 - 2 * xMargin), 
