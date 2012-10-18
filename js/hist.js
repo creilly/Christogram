@@ -1,8 +1,6 @@
 var height = 500, width = 800;
-var pad = .2;
-var barPad = .2;
-var tickPad = .05;
-var halfTickWidth = .005;
+var xMargin = .2;
+var yMargin = .2;
 
 //to represent canvas on document load
 var canvas = null;
@@ -206,6 +204,8 @@ function boolUpdate(plot) {
 function updateCanvas() {
 	canvas.width = canvas.width;
 	var plots = $('.plot:not(.dead)').has('.active:checked');
+	
+	// get plot min/max
 	var min = 'null';
 	var max = 'null'; 
 	plots.each(function () {
@@ -223,6 +223,7 @@ function updateCanvas() {
 
 	var min_raw = parseInt($('#x-min').prop('value')); 
 	var max_raw = parseInt($('#x-max').prop('value'));
+	//algo needs tweaking
 	var min = min + min_raw / 100 * max_raw / 100 * (max-min);
 	var max = min + max_raw / 100 * (max - min);
 	
@@ -230,19 +231,66 @@ function updateCanvas() {
 		var plot = $(this);
 		var data = plot.data('data');
 		var bins = Math.floor(parseInt(plot.find('.binnumber').prop('value')) * (max - min) / (data[data.length - 1] - data[0]));
+		
+		function x (x) {
+			return canvas.width*( xMargin + x / bins * ( 1 - 2 * xMargin ) );
+		}
+		
 		var hist = binData(data,bins,min,max);
 		var histMax = Math.max.apply(null,hist);
+		
+		function y (y) {
+			return canvas.height * ( 1 - yMargin - y / histMax * ( 1 - 2 * yMargin ));
+		};
+		
 		var color = hexToRgb(plot.find('.color').prop('value'));
 		
 		c.fillStyle = 'rgba(' + color + ',.7)';
 		c.beginPath();
 		for (var iii in hist) {
-			c.rect( iii / hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height , canvas.width / bins * .8,  hist[iii] / histMax * canvas.height);
+			if (hist[iii]) {
+				drawRect(iii/bins, 0, .8 / bins, hist[iii] / histMax);
+			}
 		}
 		c.closePath();
 		c.fill();
 		c.stroke();
 	});
+	
+	drawLabels();
+	
+	drawBBox();
+}
+
+function drawLabels() {
+	c.font = 'bold 20px sans-serif';
+	c.fillStyle = 'black';
+	c.textAlign = 'center';
+	c.fillText($('#x-label').prop('value'), canvas.width / 2, canvas.height * (1 - ( yMargin / 2) ) );
+	c.fillText($('#y-label').prop('value'), canvas.width * xMargin / 2, canvas.height / 2 );
+}
+
+function drawRect(x,y,dx,dy) {
+	c.color = "black";
+	c.rect(
+		canvas.width * (xMargin + x * ( 1 - 2 * xMargin )), 
+		canvas.height * ( 1 - yMargin + ( y - dy ) * ( 1 - 2 * yMargin) ), 
+		canvas.width * dx * (1 - 2 * xMargin), 
+		canvas.height * dy * ( 1 - 2 * yMargin ),
+		canvas.width * dx * .2 * ( 1 - 2 * xMargin),
+		true
+	);
+}
+
+function drawBBox() {
+	c.roundRect(
+		0,
+		0,
+		canvas.width,
+		canvas.height,
+		20
+	);
+	c.stroke();
 }
 
 function activePlot() {
@@ -376,7 +424,16 @@ function initializeControls() {
 	$('#size, #aspect').change(dimsChanged);
 
 	//change x-range
-	$('#x-min, #x-max').change(domainChanged)
+	$('#x-min, #x-max').change(domainChanged);
+	
+	//change titles
+	$('#x-label, #y-label').keyup(function(e) {
+		console.log('here');
+		if (e.keyCode == 13) {
+			labelsChanged(this);
+		}
+	});
+
 
 	//add plot button
 	$('#add-plot').click(function() {$('input[type=file]').click();}).tooltip({delay: {show: 500, hide: 100}});
@@ -393,6 +450,10 @@ function initializeControls() {
   	window.addEventListener('drop', handleFileSelect, false);
 
 };
+
+function labelsChanged() {
+	updateCanvas();
+}
 
 //change x-range
 function domainChanged() {
@@ -518,4 +579,30 @@ function hexToRgb(hex) {
     }
     return rgb.join(',');
 }
+
+CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius, fill, stroke) {
+    if (typeof stroke == "undefined") {
+        stroke = true;
+    }
+    if (typeof radius === "undefined") {
+        radius = 5;
+    }
+    this.beginPath();
+    this.moveTo(x + radius, y);
+    this.lineTo(x + width - radius, y);
+    this.quadraticCurveTo(x + width, y, x + width, y + radius);
+    this.lineTo(x + width, y + height - radius);
+    this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    this.lineTo(x + radius, y + height);
+    this.quadraticCurveTo(x, y + height, x, y + height - radius);
+    this.lineTo(x, y + radius);
+    this.quadraticCurveTo(x, y, x + radius, y);
+    this.closePath();
+    if (stroke) {
+        this.stroke(stroke);
+    }
+    if (fill) {
+        this.fill(fill);
+    }
+};
 
