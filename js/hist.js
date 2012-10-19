@@ -257,17 +257,49 @@ function updateCanvas() {
 		c.stroke();
 	});
 	
+	console.log('min: ' + min.toString() + ' max: ' + max.toString());
+	drawTicks(min, max);
+	
 	drawLabels();
 	
 	drawBBox();
 }
 
-function drawLabels() {
+function drawTicks(min, max) {
+	var scale = Math.floor(Math.log(max - min) / Math.LN10);
+	var tick = Math.ceil( min * Math.pow( 10 , -1 * scale ) );
+	console.log('scale', scale);
+	console.log('tick', tick);
+	
 	c.font = 'bold 20px sans-serif';
 	c.fillStyle = 'black';
 	c.textAlign = 'center';
+	c.textBaseline = 'top';
+	while (tick < max * Math.pow( 10 , -1 * scale )) {
+		var text = tick.toString()
+		console.log( 'text', text.substr(0,text.length + scale) + '.' + text.substr(text.length + scale));
+		c.fillText(
+			text.substr(0,text.length + scale) + '.' + text.substr(text.length + scale),
+			canvas.width * (xMargin + Math.pow(10,scale) * ( tick -  Math.pow(10,-1 * scale) * min ) / (max - min) * ( 1 - 2 * xMargin )), 
+			canvas.height * ( 1 - yMargin ) 
+		);
+		tick ++;
+	}
+	
+}
+
+function drawLabels() {
+	c.fillStyle = 'black';
+	c.textAlign = 'center';
+	c.textBaseline = 'middle';
+	
+	c.font = 'bold 30px sans-serif';
+	c.fillText($('#title').prop('value'), canvas.width / 2, canvas.height * ( yMargin / 2) );
+	
+	c.font = 'bold 20px sans-serif';
 	c.fillText($('#x-label').prop('value'), canvas.width / 2, canvas.height * (1 - ( yMargin / 2) ) );
 	c.fillText($('#y-label').prop('value'), canvas.width * xMargin / 2, canvas.height / 2 );
+	
 }
 
 function drawRect(x,y,dx,dy) {
@@ -427,7 +459,7 @@ function initializeControls() {
 	$('#x-min, #x-max').change(domainChanged);
 	
 	//change titles
-	$('#x-label, #y-label').keyup(function(e) {
+	$('#x-label, #y-label, #title').keyup(function(e) {
 		console.log('here');
 		if (e.keyCode == 13) {
 			labelsChanged(this);
@@ -534,9 +566,9 @@ $(function() {
 
 	initializeControls();
 	
-	createPlot(gaussian(100000,30,4.0));
+	createPlot(gaussian(100000,4.0,.2));
 	
-	createPlot(gaussian(100000,31,5.0));
+	createPlot(gaussian(100000,4.05,.3));
 });
 
 function hslToRgb(h, s, l) {
