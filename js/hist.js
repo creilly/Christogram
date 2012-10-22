@@ -249,7 +249,7 @@ function updateCanvas() {
 		c.beginPath();
 		for (var iii in hist) {
 			if (hist[iii]) {
-				drawRect(iii/bins, 0, .8 / bins, hist[iii] / histMax);  
+				drawRect(iii/bins + .1 /bins, 0, .8 / bins, hist[iii] / histMax);  
 			}
 		}
 		c.closePath();
@@ -258,7 +258,8 @@ function updateCanvas() {
 	});
 	
 	console.log('min: ' + min.toString() + ' max: ' + max.toString());
-	drawTicks(min, max);
+	
+	if (plots.length) drawTicks(min, max);
 	
 	drawLabels();
 	
@@ -266,24 +267,61 @@ function updateCanvas() {
 }
 
 function drawTicks(min, max) {
-	var scale = Math.floor(Math.log(max - min) / Math.LN10);
-	var tick = Math.ceil( min * Math.pow( 10 , -1 * scale ) );
-	console.log('scale', scale);
-	console.log('tick', tick);
-	
 	c.font = 'bold 20px sans-serif';
 	c.fillStyle = 'black';
 	c.textAlign = 'center';
 	c.textBaseline = 'top';
-	while (tick < max * Math.pow( 10 , -1 * scale )) {
-		var text = tick.toString()
-		console.log( 'text', text.substr(0,text.length + scale) + '.' + text.substr(text.length + scale));
-		c.fillText(
-			text.substr(0,text.length + scale) + '.' + text.substr(text.length + scale),
-			canvas.width * (xMargin + Math.pow(10,scale) * ( tick -  Math.pow(10,-1 * scale) * min ) / (max - min) * ( 1 - 2 * xMargin )), 
-			canvas.height * ( 1 - yMargin ) 
-		);
-		tick ++;
+	
+	var range = max - min;
+	console.log('range:',range.toString());
+	var order = Math.floor(Math.log(range) / Math.LN10) + 1;
+	var delta = null;
+	var mode = 0; 
+	
+	while (true) {
+		delta = Math.pow(10, order);
+		
+		//must have at least one number mark
+		if (Math.floor(range * pow(2, mode) / delta) >= 4) break;
+		mode = (mode + 1) % 3;
+		if (!mode) {
+			order = order - 1;
+		}
+		
+	}
+	
+	var option = 0;
+	var tick = Math.floor( min * Math.pow( 10 , -1 * order ) );
+	
+	while (tick + option / pow(2,mode) <  min * Math.pow( 10 , -1 * order) ) {
+		option = (option + 1) % pow(2,mode);
+		if (!option) tick++;
+	}
+	
+	var height = canvas.height * ( 1 - yMargin );
+	while (tick + option / pow(2,mode) < max * Math.pow( 10 , -1 * order )) {
+		var width = canvas.width * (xMargin + Math.pow(10,order) * ( tick + option / pow(2,mode) -  Math.pow(10,-1 * order) * min ) / (max - min) * ( 1 - 2 * xMargin ))
+		if (option == 0) {
+			var sTick = tick.toString()
+			if (order < 0) {
+				var text = sTick.substr(0,sTick.length + order) + '.' + sTick.substr(sTick.length + order);
+			}
+			else {
+				var text = sTick;
+				var i = 0;
+				while (i < order) {
+					text += '0';
+					i++;
+				}
+			}
+			console.log( 'text', text );
+			c.fillText( text, width, height );
+		}
+		else {
+			c.fillText( (option % 2) ? '.' : 'o', width, height );
+		}
+		option = (option + 1) % pow(2,mode);
+		if (!option) tick++;
 	}
 	
 }
@@ -448,6 +486,8 @@ function initializeControls() {
 	$('input').addClass('input-medium');
 	//set slider ranges
 	$('input[type=range]').prop('min', 0).prop('max', 100);
+	$('#x-min').prop('max', 99);
+	$('#x-max').prop('min', 1);
 	$('#x-min').prop('value', 0);
 	$('#x-max').prop('value', 100);
 	$('#size, #aspect').prop('value', 50);
@@ -566,9 +606,9 @@ $(function() {
 
 	initializeControls();
 	
-	createPlot(gaussian(100000,4.0,.2));
+	createPlot(gaussian(100000,.5,.01));
 	
-	createPlot(gaussian(100000,4.05,.3));
+	createPlot(gaussian(100000,.505,.01));
 });
 
 function hslToRgb(h, s, l) {
@@ -637,4 +677,15 @@ CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, rad
         this.fill(fill);
     }
 };
+
+// integer exponentiation
+function pow(x,y) {
+	var result = 1;
+	var i = 0;
+	while (i < y) {
+		result *= x;
+		i++;
+	}
+	return result;
+}
 
