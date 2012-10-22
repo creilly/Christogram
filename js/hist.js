@@ -257,8 +257,6 @@ function updateCanvas() {
 		c.stroke();
 	});
 	
-	console.log('min: ' + min.toString() + ' max: ' + max.toString());
-	
 	if (plots.length) drawTicks(min, max);
 	
 	drawLabels();
@@ -273,7 +271,6 @@ function drawTicks(min, max) {
 	c.textBaseline = 'top';
 	
 	var range = max - min;
-	console.log('range:',range.toString());
 	var order = Math.floor(Math.log(range) / Math.LN10) + 1;
 	var delta = null;
 	var mode = 0; 
@@ -281,7 +278,12 @@ function drawTicks(min, max) {
 	while (true) {
 		delta = Math.pow(10, order);
 		
-		//must have at least one number mark
+		// use largest tick division that gives at least 4 ticks
+		
+		// option code
+		// 1 = just numbers
+		// 2 = numbers and halves
+		// 3 = numbers, quarters, and halves
 		if (Math.floor(range * pow(2, mode) / delta) >= 4) break;
 		mode = (mode + 1) % 3;
 		if (!mode) {
@@ -291,8 +293,11 @@ function drawTicks(min, max) {
 	}
 	
 	var option = 0;
+	
+	// ticks scaled so the increment by 1
 	var tick = Math.floor( min * Math.pow( 10 , -1 * order ) );
 	
+	// cycle until tick lies in the range
 	while (tick + option / pow(2,mode) <  min * Math.pow( 10 , -1 * order) ) {
 		option = (option + 1) % pow(2,mode);
 		if (!option) tick++;
@@ -302,6 +307,7 @@ function drawTicks(min, max) {
 	while (tick + option / pow(2,mode) < max * Math.pow( 10 , -1 * order )) {
 		var width = canvas.width * (xMargin + Math.pow(10,order) * ( tick + option / pow(2,mode) -  Math.pow(10,-1 * order) * min ) / (max - min) * ( 1 - 2 * xMargin ))
 		if (option == 0) {
+			// write the number
 			var sTick = tick.toString()
 			if (order < 0) {
 				var text = sTick.substr(0,sTick.length + order) + '.' + sTick.substr(sTick.length + order);
@@ -314,10 +320,10 @@ function drawTicks(min, max) {
 					i++;
 				}
 			}
-			console.log( 'text', text );
 			c.fillText( text, width, height );
 		}
 		else {
+			// draw half or quarter tick marks
 			c.fillText( (option % 2) ? '.' : 'o', width, height );
 		}
 		option = (option + 1) % pow(2,mode);
@@ -426,8 +432,6 @@ function parseString(s) {
 
 function handleFileSelect(event) {
 
-	console.log('drop detected');
-
 	event.stopPropagation();
 	event.preventDefault();
 
@@ -474,7 +478,6 @@ function onRead(event) {
 
 
 function handleDragOver(event) {
-	console.log('drag detected');
 	event.stopPropagation();
 	event.preventDefault();
 	event.dataTransfer.dropEffect = 'copy';
@@ -500,7 +503,6 @@ function initializeControls() {
 	
 	//change titles
 	$('#x-label, #y-label, #title').keyup(function(e) {
-		console.log('here');
 		if (e.keyCode == 13) {
 			labelsChanged(this);
 		}
