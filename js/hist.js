@@ -246,15 +246,11 @@ function updateCanvas() {
 		var color = hexToRgb(plot.find('.color').prop('value'));
 		
 		c.fillStyle = 'rgba(' + color + ',.7)';
-		c.beginPath();
 		for (var iii in hist) {
 			if (hist[iii]) {
 				drawRect(iii/bins + .1 /bins, 0, .8 / bins, hist[iii] / histMax);  
 			}
 		}
-		c.closePath();
-		c.fill();
-		c.stroke();
 	});
 	
 	if (plots.length) drawTicks(min, max);
@@ -353,7 +349,7 @@ function drawRect(x,y,dx,dy) {
 		canvas.height * ( 1 - yMargin + ( y - dy ) * ( 1 - 2 * yMargin) ), 
 		canvas.width * dx * (1 - 2 * xMargin), 
 		canvas.height * dy * ( 1 - 2 * yMargin ),
-		canvas.width * dx * .2 * ( 1 - 2 * xMargin),
+		canvas.width * dx * .4 * ( 1 - 2 * xMargin),
 		true
 	);
 }
@@ -608,9 +604,11 @@ $(function() {
 
 	initializeControls();
 	
-	createPlot(gaussian(100000,.5,.01));
+	createPlot(gaussian(500,.5,.01));
 	
-	createPlot(gaussian(100000,.505,.01));
+	createPlot(gaussian(300,.505,.01));
+	
+	createPlot(gaussian(400,.502,.01));
 });
 
 function hslToRgb(h, s, l) {
