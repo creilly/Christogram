@@ -30,6 +30,7 @@ function createPlot(data) {
 
 	var plotName = 'plot' + plotCounter.toString();
 
+	// li to make list sortable
 	var plot = $('<li>')
 		.addClass('accordion-group')
 		.addClass('alert')
@@ -155,7 +156,7 @@ function createPlot(data) {
 
 	plot.addClass('initialized');
 
-	// li to make list sortable
+
 	plots.prepend(plot);
 
 	toggle.trigger('click.collapse.data-api');
