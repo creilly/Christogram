@@ -5,7 +5,8 @@
 		<script src="js/libs/jquery.js"></script>
 		<script src="js/libs/bootstrap.js"></script>
 		<script src="js/hist.js"></script>
-
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
+		<script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
 		<link rel="stylesheet" href="css/bootstrap.css" />
 		<link rel="stylesheet" href="css/style.css" />
 	</head>
@@ -19,23 +20,29 @@
 		</div>
 		<div class="container-fluid">
 			<div class="row-fluid">
-				<div class="span3">
+				<div class="span3 control-panel">
 					<div class="menu-border">
 						<legend>
 							<a id="export-plot" class="btn btn-small pull-right" rel="tooltip" title="export plot as png"> <i class="icon-download"> </i> </a>
-							<a class="accordion-toggle" data-toggle="collapse" href="#canvas-controls" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plot controls </a>
+							<a class="accordion-toggle menu-title" data-toggle="collapse" href="#canvas-controls" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plot controls </a>
 						</legend>
 						<form class="collapse in form-horizontal" id="canvas-controls">
 							<div class="control-group">
+								<label class="control-label" for="title">title</label>
+								<div class="controls">
+									<input id="title" type="text" value="title">
+								</div>
+							</div>
+							<div class="control-group">
 								<label class="control-label" for="x-label">x-label</label>
 								<div class="controls">
-									<input id="x-label" type="text">
+									<input id="x-label" type="text" value="x-label">
 								</div>
 							</div>
 							<div class="control-group">
 								<label class="control-label" for="y-label">y-label</label>
 								<div class="controls">
-									<input id="y-label" type="text">
+									<input id="y-label" type="text" value="y-label">
 								</div>
 							</div>
 							<div class="control-group">
@@ -68,13 +75,13 @@
 						<legend>
 							<a id="add-plot" class="btn btn-small pull-right" rel="tooltip" title="add plot (or just drop file on page!)"> <i class="icon-plus"> </i> </a>
 							<input type="file" style="display: none" accept="text/plain" />
-							<a class="accordion-toggle" data-toggle="collapse" href="#plots" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plots </a>
+							<a class="accordion-toggle menu-title" data-toggle="collapse" href="#plots" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plots </a>
 						</legend>
-						<div class="accordion collapse in" id="plots">
-							<div id="no-plots">
+						<ul class="accordion collapse in sortable" id="plots">
+							<li id="no-plots">
 								no plots
-							</div>
-						</div>
+							</li>
+						</ul>
 					</div>
 
 				</div>
@@ -84,7 +91,7 @@
 				</div>
 			</div>
 			<hr />
-			<a id="sample" href="sample_data.txt" rel="tooltip" data-placement="right" title="right click &quot;save as&quot;" target="_blank"><b>sample data</b></a>
+			<a id="sample" href="sample_data.zip"><b>sample data</b></a> 
 		</div>
 	</body>
 </html>
