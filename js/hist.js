@@ -24,7 +24,9 @@ function createPlot(data) {
 	
 	if (plots.children().length < 2) {
 		plots.children('#no-plots').hide();
-	}
+	}
+
+
 
 	var plotName = 'plot' + plotCounter.toString();
 
@@ -153,7 +155,8 @@ function createPlot(data) {
 
 	plot.addClass('initialized');
 
-	plots.prepend(plot);
+	// li to make list sortable
+	plots.prepend($("<li>").append(plot));
 
 	toggle.trigger('click.collapse.data-api');
 	
@@ -257,7 +260,9 @@ function updateCanvas() {
 	
 	drawLabels();
 	
-	drawBBox();
+	drawBBox();
+
+
 }
 
 function drawTicks(min, max) {
@@ -608,7 +613,8 @@ $(function() {
 	
 	createPlot(gaussian(300,.505,.01));
 	
-	createPlot(gaussian(400,.502,.01));
+	createPlot(gaussian(400,.502,.01));
+
 });
 
 function hslToRgb(h, s, l) {
@@ -689,3 +695,14 @@ function pow(x,y) {
 	return result;
 }
 
+// set up sortable
+$(function() {
+    $( ".sortable" ).sortable({
+    	placeholder: "ui-state-highlight",
+    	axis: "y",
+    	update: function(event, ui) {
+    		console.log('triggered');
+    		updateCanvas();
+    	}
+    }).disableSelection();
+});

@@ -5,7 +5,8 @@
 		<script src="js/libs/jquery.js"></script>
 		<script src="js/libs/bootstrap.js"></script>
 		<script src="js/hist.js"></script>
-
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css" />
+		<script src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
 		<link rel="stylesheet" href="css/bootstrap.css" />
 		<link rel="stylesheet" href="css/style.css" />
 	</head>
@@ -76,11 +77,11 @@
 							<input type="file" style="display: none" accept="text/plain" />
 							<a class="accordion-toggle menu-title" data-toggle="collapse" href="#plots" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plots </a>
 						</legend>
-						<div class="accordion collapse in" id="plots">
-							<div id="no-plots">
+						<ul class="accordion collapse in sortable" id="plots">
+							<li id="no-plots">
 								no plots
-							</div>
-						</div>
+							</li>
+						</ul>
 					</div>
 
 				</div>

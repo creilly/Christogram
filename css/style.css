@@ -31,3 +31,7 @@ a:hover, i:hover, .accordion-toggle:hover {
 form.in {
 	padding-top: 1px;
 }
+
+.ui-state-highlight {
+	height: 100px;
+}
