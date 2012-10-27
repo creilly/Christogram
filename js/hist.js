@@ -30,7 +30,7 @@ function createPlot(data) {
 
 	var plotName = 'plot' + plotCounter.toString();
 
-	var plot = $('<li>')
+	var plot = $('<div>')
 		.addClass('accordion-group')
 		.addClass('alert')
 		.addClass('fade')
@@ -325,7 +325,7 @@ function drawTicks(min, max) {
 		}
 		else {
 			// draw half or quarter tick marks
-			c.fillText( (option % 2) ? '.' : 'o', width, height );
+			c.fillText( ((mode == 2) && (option % 2)) ? 'x' : 'o', width, height );
 		}
 		option = (option + 1) % pow(2,mode);
 		if (!option) tick++;
@@ -704,5 +704,5 @@ $(function() {
     		console.log('triggered');
     		updateCanvas();
     	}
-    }).disableSelection();
+    });
 });
