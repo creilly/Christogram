@@ -230,6 +230,8 @@ function updateCanvas() {
 	var min = min + min_raw / 100 * max_raw / 100 * (max-min);
 	var max = min + max_raw / 100 * (max - min);
 	
+	c.lineWidth = 1.5;
+	
 	plots.each(function () {
 		var plot = $(this);
 		var data = plot.data('data');
@@ -249,11 +251,16 @@ function updateCanvas() {
 		var color = hexToRgb(plot.find('.color').prop('value'));
 		
 		c.fillStyle = 'rgba(' + color + ',.7)';
+		c.beginPath();
+		c.linewidth
 		for (var iii in hist) {
 			if (hist[iii]) {
 				drawRect(iii/bins + .1 /bins, 0, .8 / bins, hist[iii] / histMax);  
 			}
 		}
+		c.closePath();
+		c.fill();
+		c.stroke();
 	});
 	
 	if (plots.length) drawTicks(min, max);
@@ -325,7 +332,7 @@ function drawTicks(min, max) {
 		}
 		else {
 			// draw half or quarter tick marks
-			c.fillText( ((mode == 2) && (option % 2)) ? 'x' : 'o', width, height );
+			c.fillText( ((mode == 2) && (option % 2)) ? '\u25cb' : '\u25cf', width, height );
 		}
 		option = (option + 1) % pow(2,mode);
 		if (!option) tick++;
@@ -349,18 +356,18 @@ function drawLabels() {
 
 function drawRect(x,y,dx,dy) {
 	c.color = "black";
-	c.roundRect(
+	c.rect(
 		canvas.width * (xMargin + x * ( 1 - 2 * xMargin )), 
 		canvas.height * ( 1 - yMargin + ( y - dy ) * ( 1 - 2 * yMargin) ), 
 		canvas.width * dx * (1 - 2 * xMargin), 
-		canvas.height * dy * ( 1 - 2 * yMargin ),
-		canvas.width * dx * .4 * ( 1 - 2 * xMargin),
-		true
+		canvas.height * dy * ( 1 - 2 * yMargin )
+		// canvas.width * dx * .4 * ( 1 - 2 * xMargin),
+		// true
 	);
 }
 
 function drawBBox() {
-	c.roundRect(
+	c.rect(
 		0,
 		0,
 		canvas.width,
@@ -701,7 +708,6 @@ $(function() {
     	placeholder: "ui-state-highlight",
     	axis: "y",
     	update: function(event, ui) {
-    		console.log('triggered');
     		updateCanvas();
     	}
     });
