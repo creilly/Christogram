@@ -1,8 +1,6 @@
-var height = 500, width = 700;
-var pad = .2;
-var barPad = .2;
-var tickPad = .05;
-var halfTickWidth = .005;
+var height = 500, width = 800;
+var xMargin = .2;
+var yMargin = .2;
 
 //to represent canvas on document load
 var canvas = null;
@@ -122,7 +120,7 @@ function createPlot(data) {
 	
 	$('input',plot).addClass('input-medium');
 
-	plot.bind('close', plotRemoved);
+	plot.on('closed', plotRemoved);
 
 	// start shown
 	active.trigger('change');
@@ -157,6 +155,7 @@ function createPlot(data) {
 
 	plot.addClass('initialized');
 
+	// li to make list sortable
 	plots.prepend(plot);
 
 	toggle.trigger('click.collapse.data-api');
@@ -192,6 +191,7 @@ function titleChanged(el) {
 }
 
 function plotRemoved() {
+	$(this).addClass('dead');
 	if (plots.children().length < 3) {
 		plots.children('#no-plots').show();
 	}
@@ -206,7 +206,9 @@ function boolUpdate(plot) {
 
 function updateCanvas() {
 	canvas.width = canvas.width;
-	var plots = $('.plot').has('.active:checked')
+	var plots = $('.plot:not(.dead)').has('.active:checked');
+	
+	// get plot min/max
 	var min = 'null';
 	var max = 'null'; 
 	plots.each(function () {
@@ -224,61 +226,156 @@ function updateCanvas() {
 
 	var min_raw = parseInt($('#x-min').prop('value')); 
 	var max_raw = parseInt($('#x-max').prop('value'));
+	//algo needs tweaking
 	var min = min + min_raw / 100 * max_raw / 100 * (max-min);
 	var max = min + max_raw / 100 * (max - min);
+	
+	c.lineWidth = 1.5;
 	
 	plots.each(function () {
 		var plot = $(this);
 		var data = plot.data('data');
-		var bins = Math.ceil(parseInt(plot.find('.binnumber').prop('value')) * (max - min) / (data[data.length - 1] - data[0]));
+		var bins = Math.floor(parseInt(plot.find('.binnumber').prop('value')) * (max - min) / (data[data.length - 1] - data[0]));
+		
+		function x (x) {
+			return canvas.width*( xMargin + x / bins * ( 1 - 2 * xMargin ) );
+		}
+		
 		var hist = binData(data,bins,min,max);
 		var histMax = Math.max.apply(null,hist);
+		
+		function y (y) {
+			return canvas.height * ( 1 - yMargin - y / histMax * ( 1 - 2 * yMargin ));
+		};
+		
 		var color = hexToRgb(plot.find('.color').prop('value'));
 		
 		c.fillStyle = 'rgba(' + color + ',.7)';
 		c.beginPath();
+		c.linewidth
 		for (var iii in hist) {
-			c.rect(2 + iii/hist.length * canvas.width, ( 1 - hist[iii] / histMax ) * canvas.height, canvas.width / bins - 4,  hist[iii] / histMax * canvas.height);
+			if (hist[iii]) {
+				drawRect(iii/bins + .1 /bins, 0, .8 / bins, hist[iii] / histMax);  
+			}
 		}
 		c.closePath();
 		c.fill();
 		c.stroke();
 	});
+	
+	if (plots.length) drawTicks(min, max);
+	
+	drawLabels();
+	
+	drawBBox();
+
+
 }
 
-function hexToRgb(hex) {
-	rgb = [];
-	var iii = 0;
-    while (iii < 3) {
-    	rgb.push(parseInt(hex.substring(2 * iii + 1, 2 * iii + 3),16).toString());
-    	iii++;
-    }
-    return rgb.join(',');
+function drawTicks(min, max) {
+	c.font = 'bold 20px sans-serif';
+	c.fillStyle = 'black';
+	c.textAlign = 'center';
+	c.textBaseline = 'top';
+	
+	var range = max - min;
+	var order = Math.floor(Math.log(range) / Math.LN10) + 1;
+	var delta = null;
+	var mode = 0; 
+	
+	while (true) {
+		delta = Math.pow(10, order);
+		
+		// use largest tick division that gives at least 4 ticks
+		
+		// option code
+		// 1 = just numbers
+		// 2 = numbers and halves
+		// 3 = numbers, quarters, and halves
+		if (Math.floor(range * pow(2, mode) / delta) >= 4) break;
+		mode = (mode + 1) % 3;
+		if (!mode) {
+			order = order - 1;
+		}
+		
+	}
+	
+	var option = 0;
+	
+	// ticks scaled so the increment by 1
+	var tick = Math.floor( min * Math.pow( 10 , -1 * order ) );
+	
+	// cycle until tick lies in the range
+	while (tick + option / pow(2,mode) <  min * Math.pow( 10 , -1 * order) ) {
+		option = (option + 1) % pow(2,mode);
+		if (!option) tick++;
+	}
+	
+	var height = canvas.height * ( 1 - yMargin );
+	while (tick + option / pow(2,mode) < max * Math.pow( 10 , -1 * order )) {
+		var width = canvas.width * (xMargin + Math.pow(10,order) * ( tick + option / pow(2,mode) -  Math.pow(10,-1 * order) * min ) / (max - min) * ( 1 - 2 * xMargin ))
+		if (option == 0) {
+			// write the number
+			var sTick = tick.toString()
+			if (order < 0) {
+				var text = sTick.substr(0,sTick.length + order) + '.' + sTick.substr(sTick.length + order);
+			}
+			else {
+				var text = sTick;
+				var i = 0;
+				while (i < order) {
+					text += '0';
+					i++;
+				}
+			}
+			c.fillText( text, width, height );
+		}
+		else {
+			// draw half or quarter tick marks
+			c.fillText( ((mode == 2) && (option % 2)) ? '\u25cb' : '\u25cf', width, height );
+		}
+		option = (option + 1) % pow(2,mode);
+		if (!option) tick++;
+	}
+	
 }
 
-// scaling functions.  input ranges from 0 to 1.  origin is bottom left.
-function x(d, p) {
-	if (p) {
-		return width * ((1 - pad ) * d + pad / 2 );
-	} else {
-		return width * (1 - pad ) * d;
-	}
-};
+function drawLabels() {
+	c.fillStyle = 'black';
+	c.textAlign = 'center';
+	c.textBaseline = 'middle';
+	
+	c.font = 'bold 30px sans-serif';
+	c.fillText($('#title').prop('value'), canvas.width / 2, canvas.height * ( yMargin / 2) );
+	
+	c.font = 'bold 20px sans-serif';
+	c.fillText($('#x-label').prop('value'), canvas.width / 2, canvas.height * (1 - ( yMargin / 2) ) );
+	c.fillText($('#y-label').prop('value'), canvas.width * xMargin / 2, canvas.height / 2 );
+	
+}
 
-function y(d, p) {
-	if (p) {
-		return height * ((1 - pad / 2 ) - (1 - pad ) * d );
-	} else {
-		return (1 - pad ) * height * d;
-	}
-};
+function drawRect(x,y,dx,dy) {
+	c.color = "black";
+	c.rect(
+		canvas.width * (xMargin + x * ( 1 - 2 * xMargin )), 
+		canvas.height * ( 1 - yMargin + ( y - dy ) * ( 1 - 2 * yMargin) ), 
+		canvas.width * dx * (1 - 2 * xMargin), 
+		canvas.height * dy * ( 1 - 2 * yMargin )
+		// canvas.width * dx * .4 * ( 1 - 2 * xMargin),
+		// true
+	);
+}
 
 function drawBBox() {
-	var thickness = 5;
-	c.lineWidth = 2 * thickness;
-	c.rect(thickness, thickness, canvas.width - 2 * thickness, canvas.height - 2 * thickness);
+	c.rect(
+		0,
+		0,
+		canvas.width,
+		canvas.height,
+		20
+	);
 	c.stroke();
-};
+}
 
 function activePlot() {
 	return plots[plotSelect.selectedIndex];
@@ -315,21 +412,19 @@ function binData(data, bins, min, max) {
 	for (var i = 0; i <= bins; i++) {
 		hist[i] = 0;
 	}
-
-	for (var i = 0; i < data.length; i++) {
-		if ( ( data[i] >= min ) && ( data[i] <= max ) ) {
-			hist[bin(data[i])]++;
-			}
+	var i = 0;
+	
+	while (data[i] < min) {
+		i++;		
+	}
+	while (i < data.length && data[i] < max ) {
+		hist[bin(data[i])]++;
+		i++;
 	}
 
 	return hist;
 
 };
-
-function changeHistogramValues(plot, hist) {
-
-	
-}
 
 function parseString(s) {
 	if (s.search(/^[\-\d]?\d*\.?\d*[\s,]*$/) == 0) {
@@ -345,48 +440,52 @@ function parseString(s) {
 
 function handleFileSelect(event) {
 
-	console.log('drop detected');
-
 	event.stopPropagation();
 	event.preventDefault();
 
-	//just get first file
-	var file = event.target.files;
-	file = file ? file[0] : event.dataTransfer.files[0];
+	var files = event.target.files ? event.target.files : event.dataTransfer.files;
+	
 	// FileList object
 
-	var fileName = file.name ? file.name : 'untitled';
+	//var fileName = file.name ? file.name : 'untitled';
+	
+	for (var fileIndex in files) {
+		
+		var file = files[fileIndex];
+		
+		var reader = new FileReader();
 
-	var reader = new FileReader();
-
-	function onRead(event) {
-
-		var dataString = event.target.result;
-
-		var data = parseString(dataString);
-
-		console.log(data);
-
-		if (data == -1) {
-			//improper data format
-			console.log('improper data format');
-			return;
-		}
-
-		createPlot(data);
-	};
-
-	// Closure to capture the file information.
-	reader.onload = onRead;
-
-	// Read in the image file as a data URL.
-	reader.readAsText(file);
+		// Closure to capture the file information.
+		reader.onload = onRead;
+	
+		// Read in the image file as a data URL.
+		reader.readAsText(file);
+	}
 
 	return false;
 };
 
+function onRead(event) {
+
+	var dataString = event.target.result;
+
+	var data = parseString(dataString);
+
+	if (data == -1) {
+		//improper data format
+		createAlert(
+			'error',
+			'Warning',
+			'incorrect file type'
+			);
+		return;
+	}
+
+	createPlot(data);
+}
+
+
 function handleDragOver(event) {
-	console.log('drag detected');
 	event.stopPropagation();
 	event.preventDefault();
 	event.dataTransfer.dropEffect = 'copy';
@@ -398,6 +497,8 @@ function initializeControls() {
 	$('input').addClass('input-medium');
 	//set slider ranges
 	$('input[type=range]').prop('min', 0).prop('max', 100);
+	$('#x-min').prop('max', 99);
+	$('#x-max').prop('min', 1);
 	$('#x-min').prop('value', 0);
 	$('#x-max').prop('value', 100);
 	$('#size, #aspect').prop('value', 50);
@@ -406,7 +507,15 @@ function initializeControls() {
 	$('#size, #aspect').change(dimsChanged);
 
 	//change x-range
-	$('#x-min, #x-max').change(domainChanged)
+	$('#x-min, #x-max').change(domainChanged);
+	
+	//change titles
+	$('#x-label, #y-label, #title').keyup(function(e) {
+		if (e.keyCode == 13) {
+			labelsChanged(this);
+		}
+	});
+
 
 	//add plot button
 	$('#add-plot').click(function() {$('input[type=file]').click();}).tooltip({delay: {show: 500, hide: 100}});
@@ -415,20 +524,18 @@ function initializeControls() {
 	//export plot button
 	$('#export-plot').click(function() {window.open(canvas.toDataURL('image/png'));}).tooltip({delay: {show: 500, hide: 100}});
 	
-	$('#plots, #canvas-controls')
-	.on('shown', function () {
-		$(this).prev().find('i[nav-arrow]').removeClass('icon-arrow-right').addClass('icon-arrow-down')
-	})
-	.on('hidden', function () {
-		$(this).prev().find('i[nav-arrow]').removeClass('icon-arrow-down').addClass('icon-arrow-right')
+	$('.menu-title').click(function () {
+		$('i',$(this)).toggleClass('icon-arrow-right').toggleClass('icon-arrow-down');
 	});
-	
-	$('#sample').tooltip();
 	
 	window.addEventListener('dragover', handleDragOver, false);
   	window.addEventListener('drop', handleFileSelect, false);
 
 };
+
+function labelsChanged() {
+	updateCanvas();
+}
 
 //change x-range
 function domainChanged() {
@@ -466,6 +573,33 @@ function controlGroup(name, type) {
 	//@on
 }
 
+function createAlert(type, alert, text) {
+	$('<div>')
+	.addClass('alert')
+	.addClass('alert-' + type)
+	.addClass('fade')
+	.addClass('in')
+	.append(
+		$('<button>')
+		.prop('type','button')
+		.addClass('close')
+		.attr('data-dismiss','alert')
+		.append(
+			$('<i>')
+			.addClass('icon-remove')
+		)
+	)
+	.append(
+		 $('<strong>')
+		 .text(alert + ': ')
+	)
+	.append(
+		$('<span>')
+		.append( ' ' + text)
+	)
+	.prependTo('.control-panel');
+}
+
 $(function() {
 
 	canvas = document.getElementById('hist');
@@ -482,11 +616,11 @@ $(function() {
 
 	initializeControls();
 	
-	// createPlot(gaussian(100000,30,4.0));
-// 	
-	// createPlot(gaussian(100000,31,5.0));
-
-
+	createPlot(gaussian(500,.5,.01));
+	
+	createPlot(gaussian(300,.505,.01));
+	
+	createPlot(gaussian(400,.502,.01));
 
 });
 
@@ -521,3 +655,60 @@ function hslToRgb(h, s, l) {
 	return [r * 255, g * 255, b * 255];
 }
 
+function hexToRgb(hex) {
+	rgb = [];
+	var iii = 0;
+    while (iii < 3) {
+    	rgb.push(parseInt(hex.substring(2 * iii + 1, 2 * iii + 3),16).toString());
+    	iii++;
+    }
+    return rgb.join(',');
+}
+
+CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius, fill, stroke) {
+    if (typeof stroke == "undefined") {
+        stroke = true;
+    }
+    if (typeof radius === "undefined") {
+        radius = 5;
+    }
+    this.beginPath();
+    this.moveTo(x + radius, y);
+    this.lineTo(x + width - radius, y);
+    this.quadraticCurveTo(x + width, y, x + width, y + radius);
+    this.lineTo(x + width, y + height - radius);
+    this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    this.lineTo(x + radius, y + height);
+    this.quadraticCurveTo(x, y + height, x, y + height - radius);
+    this.lineTo(x, y + radius);
+    this.quadraticCurveTo(x, y, x + radius, y);
+    this.closePath();
+    if (stroke) {
+        this.stroke(stroke);
+    }
+    if (fill) {
+        this.fill(fill);
+    }
+};
+
+// integer exponentiation
+function pow(x,y) {
+	var result = 1;
+	var i = 0;
+	while (i < y) {
+		result *= x;
+		i++;
+	}
+	return result;
+}
+
+// set up sortable
+$(function() {
+    $( ".sortable" ).sortable({
+    	placeholder: "ui-state-highlight",
+    	axis: "y",
+    	update: function(event, ui) {
+    		updateCanvas();
+    	}
+    });
+});
