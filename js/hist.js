@@ -427,8 +427,8 @@ function binData(data, bins, min, max) {
 };
 
 function parseString(s) {
-	if (s.search(/^[\d.]+|[\s,]+$/) == 0) {
-		var data = s.match(/[\d.]+/g);
+	if (s.search(/^[\-\d]?\d*\.?\d*[\s,]*$/) == 0) {
+		var data = s.match(/[\-\d]?\d*\.?\d*/g);
 		for (var i = 0; i < data.length; i++) {
 			data[i] = parseFloat(data[i]);
 		}
