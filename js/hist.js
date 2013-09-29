@@ -26,7 +26,9 @@ function createPlot(data) {
 	
 	if (plots.children().length < 2) {
 		plots.children('#no-plots').hide();
-	}
+	}
+
+
 
 	var plotName = 'plot' + plotCounter.toString();
 
@@ -330,8 +332,8 @@ function changeHistogramValues(plot, hist) {
 }
 
 function parseString(s) {
-	if (s.search(/^[\d.]+|[\s,]+$/) == 0) {
-		var data = s.match(/[\d.]+/g);
+	if (s.search(/^[\-\d]?\d*\.?\d*[\s,]*$/) == 0) {
+		var data = s.match(/[\-\d]?\d*\.?\d*/g);
 		for (var i = 0; i < data.length; i++) {
 			data[i] = parseFloat(data[i]);
 		}
@@ -482,7 +484,10 @@ $(function() {
 	
 	// createPlot(gaussian(100000,30,4.0));
 // 	
-	// createPlot(gaussian(100000,31,5.0));
+	// createPlot(gaussian(100000,31,5.0));
+
+
+
 });
 
 function hslToRgb(h, s, l) {
