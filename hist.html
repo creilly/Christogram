@@ -10,6 +10,7 @@
 		<link rel="stylesheet" href="css/bootstrap.css" />
 		<link rel="stylesheet" href="css/style.css" />
 	</head>
+
 	<body>
 		<div class="navbar navbar-inverse">
 			<div class="navbar-inner">
@@ -23,8 +24,10 @@
 				<div class="span3 control-panel">
 					<div class="menu-border">
 						<legend>
-							<a id="export-plot" class="btn btn-small pull-right" rel="tooltip" title="export plot as png"> <i class="icon-download"> </i> </a>
-							<a class="accordion-toggle menu-title" data-toggle="collapse" href="#canvas-controls" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plot controls </a>
+							<a id="export-plot" class="btn btn-small pull-right" rel="tooltip" title="export plot as png"> 
+							  <span class="icon-picture"> </span> 
+							</a>
+							<a class="accordion-toggle menu-title" data-toggle="collapse" href="#canvas-controls" style="display: block"> <span class="icon-arrow-down" nav-arrow></span> plot controls </a>
 						</legend>
 						<form class="collapse in form-horizontal" id="canvas-controls">
 							<div class="control-group">
@@ -73,9 +76,9 @@
 					</div>
 					<div class="menu-border">
 						<legend>
-							<a id="add-plot" class="btn btn-small pull-right" rel="tooltip" title="add plot (or just drop file on page!)"> <i class="icon-plus"> </i> </a>
+							<a id="add-plot" class="btn btn-small pull-right" rel="tooltip" title="add plot (or just drop file on page!)"> <span class="icon-plus"> </span> </a>
 							<input type="file" style="display: none" accept="text/plain" />
-							<a class="accordion-toggle menu-title" data-toggle="collapse" href="#plots" style="display: block"> <i class="icon-arrow-down" nav-arrow></i> plots </a>
+							<a class="accordion-toggle menu-title" data-toggle="collapse" href="#plots" style="display: block"> <span class="icon-arrow-down" nav-arrow></span> plots </a>
 						</legend>
 						<ul class="accordion collapse in sortable" id="plots">
 							<div id="no-plots">
