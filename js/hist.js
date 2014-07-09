@@ -26,8 +26,6 @@ function createPlot(data) {
 		plots.children('#no-plots').hide();
 	}
 
-
-
 	var plotName = 'plot' + plotCounter.toString();
 
 	var plot = $('<div>')
@@ -59,9 +57,24 @@ function createPlot(data) {
 
 	headingrow.append(active);
 
+    var exportdata = $('<a>')
+	.addClass('span3')
+	.addClass('btn')
+	.addClass('btn-small')
+	.addClass('export-data')
+	.attr('rel','tooltip')
+	.attr('title','export histogram data')
+
+    var exporticon = $('<span>')
+	.addClass('icon-download')
+
+    exportdata.append(exporticon)
+    
+    headingrow.append(exportdata)
+
 	var toggle = $('<a>')
 		.addClass('accordion-toggle')
-		.addClass('span9')
+		.addClass('span6')
 		.addClass('plot-title')
 		.attr('href', '#' + plotName)
 		.attr('data-parent', '#' + plots.attr('id'))
@@ -122,6 +135,8 @@ function createPlot(data) {
 
 	plot.on('closed', plotRemoved);
 
+    exportdata.click(exportDataRequested);
+
 	// start shown
 	active.trigger('change');
 	// hide/show
@@ -164,6 +179,23 @@ function createPlot(data) {
 
 	plotCounter++;
 };
+
+function exportDataRequested() {
+    var plot = $(this).parents('.plot')
+    var data = plot.data('data');
+    var bins = parseInt(plot.find('.binnumber').prop('value'));
+    var min = data[0];
+    var max = data[data.length - 1];
+    var hist = binData(data,bins,min,max);
+    var output = '';
+    for (var i = 0; i < bins; i++) {
+	var bin_location = data[0] + ( i + .5 ) * (max - min) / bins
+	output = output + bin_location.toString() + "\t" + hist[i].toString() + "<br>";
+    }
+    var w = window.open();
+    var d = w.document.open('text/plain');
+    d.write(output);    
+}
 
 function activeChanged() {
 	updateCanvas();
@@ -522,7 +554,7 @@ function initializeControls() {
 	$('#export-plot').click(function() {window.open(canvas.toDataURL('image/png'));}).tooltip({delay: {show: 500, hide: 100}});
 	
 	$('.menu-title').click(function () {
-		$('i',$(this)).toggleClass('icon-arrow-right').toggleClass('icon-arrow-down');
+		$('span',$(this)).toggleClass('icon-arrow-down').toggleClass('icon-arrow-right');
 	});
 	
 	window.addEventListener('dragover', handleDragOver, false);
