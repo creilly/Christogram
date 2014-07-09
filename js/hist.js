@@ -428,15 +428,11 @@ function binData(data, bins, min, max) {
 };
 
 function parseString(s) {
-	if (s.search(/^\-?\d+\.?\d*[\s,]*$/) == 0) {
-		var data = s.match(/\-?\d+\.?\d*/g);
-		for (var i = 0; i < data.length; i++) {
-			data[i] = parseFloat(data[i]);
-		}
-		return data;
-	} else {
-		return -1;
-	}
+    var data = s.match(/\-?\d+\.?\d*/g);
+    for (var i = 0; i < data.length; i++) {
+	data[i] = parseFloat(data[i]);
+    }
+    return data;
 };
 
 function handleFileSelect(event) {
